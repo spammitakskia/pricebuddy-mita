@@ -60,6 +60,14 @@ Due to the complexity of the app and its dependencies, other installation method
 are not recommended but if you are that keen to not use docker, look through the 
 `docker/php.dockerfile` and `docker-compose.yml` to see what is needed.
 
+## Affiliate codes
+
+By default, affiliate codes are added to a [couple of stores](config/affiliates.php), 
+this supports development of the project. If you would rather not have affiliate codes 
+added, you can set `AFFILIATE_ENABLED=false` in your docker compose file or `.env` file. 
+If you do disable this, Maybe consider supporting the project in 
+[other ways](https://pricebuddy.jez.me//support-project.html).
+
 ## Cron / Background tasks
 
 The docker container has a cron job baked in that will take care of background tasks

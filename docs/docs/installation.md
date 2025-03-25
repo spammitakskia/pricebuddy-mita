@@ -17,6 +17,12 @@ docker compose up -d
 Then visit `http://localhost:8080` in your browser. The default username is 
 `admin@example.com` and the default password is `admin`.
 
+NOTES:
+* You should look at the `docker-compose.yml` to ensure you are happy with the default
+  settings, ports, environment variables, etc.
+* If you are getting a 500 error, it is likely due to a missing `.env` file. You can
+  create an empty one next to the `docker-compose.yml` file with `touch .env`.
+
 ## Database
 
 The docker compose file includes a mysql database. You can use an external database if
