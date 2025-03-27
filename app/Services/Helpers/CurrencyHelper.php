@@ -45,10 +45,10 @@ class CurrencyHelper
         )
             // Normalize the locale to use underscores instead of dashes and ensure not empty.
             ->map(fn ($currency) => array_merge($currency, [
-            'locale' => empty($currency['locale'])
-                ? 'none'
-                : str_replace('-', '_', $currency['locale']),
-        ]));
+                'locale' => empty($currency['locale'])
+                    ? 'none'
+                    : str_replace('-', '_', $currency['locale']),
+            ]));
     }
 
     public static function getSymbol(?string $iso = null): string
