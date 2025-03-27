@@ -43,6 +43,7 @@ return [
         'price' => [
             'selector' => [
                 'meta[property="product:price:amount"]|content',
+                '.a-price .a-offscreen',            // Amazon
                 '[itemProp="price"]|content',
                 '.price',
                 '[class^="price"]',
@@ -58,9 +59,9 @@ return [
             'selector' => [
                 'meta[property="og:image"]|content',
                 'meta[property="og:image:secure_url"]|content',
-                'img[src]|src',
             ],
             'regex' => [
+                '~\"hiRes\":\"(.+?)\"~',            // Amazon
                 '~\"image\"\:\s?\"(.*?\.jpg)\"~',   // Something that looks like an image, in a json object, eg "price": "99.99"
                 '~\"image\"\:\s?\"(.*?\.png)\"~',   // Something that looks like an image, in a json object, eg "price": "99.99"
             ],
