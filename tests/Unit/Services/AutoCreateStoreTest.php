@@ -17,7 +17,7 @@ class AutoCreateStoreTest extends TestCase
         $autoCreateStore = new AutoCreateStore($this->testUrl);
         $attributes = $autoCreateStore->getStoreAttributes();
 
-        $this->assertSame('Example', data_get($attributes, 'name'));
+        $this->assertSame('Example.com', data_get($attributes, 'name'));
         $this->assertSame(ScraperService::Http->value, data_get($attributes, 'settings.scraper_service'));
 
         $this->assertCount(2, $attributes['domains']);

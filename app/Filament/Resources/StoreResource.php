@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Enums\Icons;
 use App\Enums\ScraperService;
+use App\Filament\Pages\AppSettingsPage;
 use App\Filament\Resources\StoreResource\Pages\CreateStore;
 use App\Filament\Resources\StoreResource\Pages\EditStore;
 use App\Filament\Resources\StoreResource\Pages\ListStores;
@@ -12,6 +13,7 @@ use App\Models\Store;
 use App\Providers\Filament\AdminPanelProvider;
 use App\Rules\StoreUrl;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -95,6 +97,11 @@ class StoreResource extends Resource
                         ->rows(4)
                         ->placeholder("device=Desktop Firefox\nsleep=1000"),
                 ])->description('Advanced scraper service settings')->columns(2),
+
+                Section::make('Locale')
+                    ->description(__('Override region and locale settings for this store'))
+                    ->columns(2)
+                    ->schema(AppSettingsPage::getLocaleFormFields('settings.locale_settings')),
 
                 Forms\Components\Section::make('Notes')->schema([
                     Forms\Components\RichEditor::make('notes')
