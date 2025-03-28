@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 
 /**
@@ -105,7 +104,7 @@ class Url extends Model
     protected function latestPriceFormatted(): Attribute
     {
         return Attribute::make(
-            get: fn () => Number::currency($this->latestPrice()->first()->price ?? 0)
+            get: fn () => CurrencyHelper::toString($this->latestPrice()->first()->price ?? 0)
         );
     }
 
@@ -118,7 +117,7 @@ class Url extends Model
             get: function ($value) {
                 $avg = $this->prices()->avg('price') ?? 0;
 
-                return Number::currency(round($avg, 2));
+                return CurrencyHelper::toString(round($avg, 2));
             },
         );
     }
@@ -189,7 +188,7 @@ class Url extends Model
         }
 
         return $this->prices()->create([
-            'price' => CurrencyHelper::toFloat($price),
+            'price' => CurrencyHelper::toFloat($price, locale: $this->store?->locale, iso: $this->store?->currency),
             'store_id' => $this->store_id,
         ]);
     }

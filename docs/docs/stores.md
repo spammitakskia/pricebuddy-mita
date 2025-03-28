@@ -116,6 +116,19 @@ If your JSON looks like this:
 
 You would use the JSON Path `product.price` to extract the price.
 
+## Locale
+
+This is default locale settings for the store, the default can be set in 
+[Settings](/settings.html) but this will override that for this store.
+
+**Locale** - This should match the locale/language of the store.
+Eg. `en_US` for English (United States) or `fr_FR` for French.
+**Currency** - This should match the currency of the store.
+Eg. `USD` for US Dollars or `EUR` for Euros.
+
+NOTE: Mixing currencies on the same product results in incorrect price 
+comparisons and aggregates.
+
 ## Scraper service
 
 This is what PriceBuddy uses get the HTML of the product page. There are two

@@ -35,4 +35,11 @@ class SettingsHelper
             return $default;
         }
     }
+
+    public static function setSetting(string $name, mixed $value)
+    {
+        $settings = static::getSettings();
+        data_set($settings, $name, $value);
+        AppSettings::new()->fill($settings)->save();
+    }
 }

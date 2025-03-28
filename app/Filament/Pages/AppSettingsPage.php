@@ -6,6 +6,8 @@ use App\Enums\Icons;
 use App\Enums\IntegratedServices;
 use App\Enums\NotificationMethods;
 use App\Filament\Traits\FormHelperTrait;
+use App\Services\Helpers\CurrencyHelper;
+use App\Services\Helpers\LocaleHelper;
 use App\Settings\AppSettings;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
@@ -73,6 +75,11 @@ class AppSettingsPage extends SettingsPage
                             ->minValue(1)
                             ->required(),
                     ]),
+
+                Section::make('Locale')
+                    ->description(__('Default region and locale settings'))
+                    ->columns(2)
+                    ->schema(self::getLocaleFormFields('default_locale_settings')),
 
                 Section::make('Logging')
                     ->description(__('Settings for logging'))
@@ -179,5 +186,25 @@ class AppSettingsPage extends SettingsPage
             ],
             new HtmlString('Automatically search for additional products urls via <a href="https://searxng.org/" target="_blank">SearXng</a>')
         );
+    }
+
+    public static function getLocaleFormFields(string $settingsKey): array
+    {
+        return [
+            Select::make($settingsKey.'.locale')
+                ->label('Locale')
+                ->searchable()
+                ->options(LocaleHelper::getAllLocalesAsOptions())
+                ->hintIcon(Icons::Help->value, 'Primarily used when extracting and displaying prices. Help translate this app on GitHub')
+                ->required()
+                ->default(CurrencyHelper::getLocale()),
+            Select::make($settingsKey.'.currency')
+                ->label('Currency')
+                ->searchable()
+                ->options(LocaleHelper::getAllCurrencyLocalesAsOptions())
+                ->hintIcon(Icons::Help->value, 'Default currency for extracting and displaying prices')
+                ->required()
+                ->default(CurrencyHelper::getCurrency()),
+        ];
     }
 }

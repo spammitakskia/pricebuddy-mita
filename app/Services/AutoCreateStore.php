@@ -20,7 +20,7 @@ class AutoCreateStore
 
     protected array $strategies = [];
 
-    public function __construct(protected string $url, protected ?string $html = null, string $scraper = self::DEFAULT_SCRAPER)
+    public function __construct(protected string $url, public ?string $html = null, string $scraper = self::DEFAULT_SCRAPER)
     {
         $this->strategies = config('price_buddy.auto_create_store_strategies', []);
 
@@ -71,6 +71,7 @@ class AutoCreateStore
             logger()->error('Unable to auto create store', [
                 'url' => $this->url,
                 'strategy' => $strategy,
+                'html' => $this->html,
             ]);
 
             return null;
@@ -91,7 +92,7 @@ class AutoCreateStore
             ['domain' => 'www.'.$host],
         ];
 
-        $attributes['name'] = ucfirst(collect(explode('.', $host))->first());
+        $attributes['name'] = ucfirst($host);
 
         $attributes['scrape_strategy'] = collect($this->strategyParse())
             ->mapWithKeys(function ($value, $key) {
@@ -105,6 +106,10 @@ class AutoCreateStore
             'scraper_service' => ScraperService::Http->value,
             'scraper_service_settings' => '',
             'test_url' => $this->url,
+            'locale_settings' => [
+                'locale' => CurrencyHelper::getLocale(),
+                'currency' => CurrencyHelper::getCurrency(),
+            ],
         ];
 
         return $attributes;
@@ -155,7 +160,7 @@ class AutoCreateStore
             return $match;
         }
 
-        if ($match = $this->attemptRegex($this->getStrategy('title', 'regex'))) {
+        if ($match = $this->attemptRegex($this->getStrategy('image', 'regex'))) {
             return $match;
         }
 
