@@ -153,9 +153,11 @@ class Url extends Model
                 throw new AuthorizationException('User is required to create a product.');
             }
 
+            $image = data_get($scrape, 'image');
+
             $productId = Product::create([
-                'title' => data_get($scrape, 'title'),
-                'image' => data_get($scrape, 'image'),
+                'title' => Str::limit(data_get($scrape, 'title'), ScrapeUrl::MAX_STR_LENGTH),
+                'image' => strlen($image) < ScrapeUrl::MAX_STR_LENGTH ? $image : null,
                 'user_id' => $userId,
                 'favourite' => true,
             ])->id;
