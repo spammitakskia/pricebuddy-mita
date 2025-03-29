@@ -172,3 +172,9 @@ Curl based HTTP request to get the page contents for performance reasons.
 
 If auto creation fails, try manually creating the store and using the API scraper or
 more custom strategies.
+
+## Sharing a store
+
+If you create a store and want to share it with others, you can export the store as
+JSON by clicking the "Share" button. You can then give this JSON to others and they
+can import it into their PriceBuddy instance.

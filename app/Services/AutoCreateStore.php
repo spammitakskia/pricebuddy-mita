@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Actions\CreateStoreAction;
 use App\Enums\ScraperService;
 use App\Models\Store;
 use App\Services\Helpers\CurrencyHelper;
@@ -58,7 +59,7 @@ class AutoCreateStore
         $attributes = self::new($url)->getStoreAttributes();
 
         return $attributes
-            ? Store::create($attributes)
+            ? (new CreateStoreAction)($attributes)
             : null;
     }
 
