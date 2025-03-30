@@ -29,7 +29,8 @@ The docker compose file includes a mysql database. You can use an external datab
 you prefer, see [Laravel documentation](https://laravel.com/docs/11.x/database#introduction)
 for supported databases. 
 
-Note `sqllite` is not supported due to the use of `json` columns.
+The docker image includes `mysql` and `pgsql` drivers. Note `sqllite` is not supported 
+due to the use of `json` columns.
 
 ## Persistent storage / volumes
 
