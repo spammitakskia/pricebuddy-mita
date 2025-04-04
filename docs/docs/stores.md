@@ -88,7 +88,7 @@ If the html contained something like this:
 {"price": "10.00", "currency": "USD"}
 ```
 
-We could use the regex `~\"price\": \"(.*?)\~"` to extract the price. 
+We could use the regex `~\"price\": \"(.*?)\"~` to extract the price. 
 
 #### Tools for testing Regex
 
