@@ -2,9 +2,9 @@
 
 namespace App\Notifications\Channels;
 
+use App\Notifications\Messages\GotifyMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
-use App\Notifications\Messages\GotifyMessage;
 
 class GotifyChannel
 {

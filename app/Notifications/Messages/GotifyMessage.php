@@ -5,8 +5,11 @@ namespace App\Notifications\Messages;
 class GotifyMessage
 {
     public string $title = '';
+
     public string $content = '';
+
     public string $url = '';
+
     public int $priority = 5;
 
     public static function create(string $content = ''): self

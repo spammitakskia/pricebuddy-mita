@@ -5,13 +5,13 @@ namespace App\Notifications;
 use App\Models\Product;
 use App\Models\Url;
 use App\Models\User;
+use App\Notifications\Messages\GotifyMessage;
 use App\Services\Helpers\NotificationsHelper;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as DatabaseNotification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
-use App\Notifications\Messages\GotifyMessage;
 use NotificationChannels\Pushover\PushoverMessage;
 
 class PriceAlertNotification extends Notification

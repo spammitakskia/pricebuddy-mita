@@ -54,9 +54,9 @@ class UserFactory extends Factory
                     'gotify' => [
                         'url' => $url,
                         'token' => $token,
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ]);
     }
 }

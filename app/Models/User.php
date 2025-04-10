@@ -74,6 +74,7 @@ class User extends Authenticatable implements FilamentUser
     public function routeNotificationForGotify()
     {
         $settings = data_get($this->settings, 'notifications.gotify');
+
         return $settings && isset($settings['url'], $settings['token']) ? $settings : false;
     }
 

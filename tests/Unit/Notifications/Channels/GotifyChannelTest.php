@@ -21,14 +21,14 @@ class GotifyChannelTest extends TestCase
     public function test_gotify_channel_sends_notification_correctly()
     {
         $user = User::factory()->withGotifySettings('https://gotify.test', 'test-token')->make();
-        $notification = new TestGotifyNotification();
+        $notification = new TestGotifyNotification;
         $message = $notification->toGotify($user);
 
         Http::fake([
             'https://gotify.test/message?token=test-token' => Http::response(null, 200),
         ]);
 
-        $channel = new GotifyChannel();
+        $channel = new GotifyChannel;
         $channel->send($user, $notification);
 
         Http::assertSent(function (Request $request) use ($message) {
@@ -43,12 +43,12 @@ class GotifyChannelTest extends TestCase
     public function test_gotify_channel_handles_missing_routing_information()
     {
         $user = User::factory()->make(); // No Gotify settings
-        $notification = new TestGotifyNotification();
+        $notification = new TestGotifyNotification;
 
         // No HTTP call should be made
         Http::fake();
 
-        $channel = new GotifyChannel();
+        $channel = new GotifyChannel;
         $channel->send($user, $notification);
 
         Http::assertNothingSent();
@@ -59,13 +59,13 @@ class GotifyChannelTest extends TestCase
         $this->expectException(\Illuminate\Http\Client\RequestException::class);
 
         $user = User::factory()->withGotifySettings('https://gotify.test', 'test-token')->make();
-        $notification = new TestGotifyNotification();
+        $notification = new TestGotifyNotification;
 
         Http::fake([
             'https://gotify.test/message?token=test-token' => Http::response('Server Error', 500),
         ]);
 
-        $channel = new GotifyChannel();
+        $channel = new GotifyChannel;
         $channel->send($user, $notification);
     }
 }
