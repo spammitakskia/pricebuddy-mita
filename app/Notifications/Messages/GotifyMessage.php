@@ -14,7 +14,7 @@ class GotifyMessage
 
     public static function create(string $content = ''): self
     {
-        return new static($content);
+        return resolve(static::class, ['content' => $content]);
     }
 
     public function __construct(string $content = '')

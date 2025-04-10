@@ -10,7 +10,7 @@ class GotifyChannel
 {
     public function send($notifiable, Notification $notification): void
     {
-        if (! $notifiable->routeNotificationFor('gotify')) {
+        if (! $notifiable->routeNotificationFor('gotify') || ! method_exists($notification, 'toGotify')) {
             return;
         }
 
