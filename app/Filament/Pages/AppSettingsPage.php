@@ -5,20 +5,19 @@ namespace App\Filament\Pages;
 use App\Enums\Icons;
 use App\Enums\IntegratedServices;
 use App\Enums\NotificationMethods;
+use App\Filament\Actions\Notifications\TestAppriseAction;
+use App\Filament\Actions\Notifications\TestGotifyAction;
 use App\Filament\Traits\FormHelperTrait;
 use App\Services\Helpers\CurrencyHelper;
 use App\Services\Helpers\LocaleHelper;
 use App\Settings\AppSettings;
 use Filament\Forms;
-use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
-use Filament\Notifications\Notification;
 use Filament\Pages\SettingsPage;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\HtmlString;
 
 class AppSettingsPage extends SettingsPage
@@ -107,6 +106,7 @@ class AppSettingsPage extends SettingsPage
                 $this->getEmailSettings(),
                 $this->getPushoverSettings(),
                 $this->getGotifySettings(),
+                $this->getAppriseSettings(),
 
                 self::makeFormHeading('Integrations'),
 
@@ -186,13 +186,34 @@ class AppSettingsPage extends SettingsPage
                     ->required()
                     ->password()
                     ->suffixAction(
-                        Action::make('testGotify')
-                            ->label('Test')
-                            ->icon('heroicon-m-bell')
-                            ->action(fn () => $this->testGotifyNotification())
+                        TestGotifyAction::make()
+                            ->setSettings(fn () => $this->form->getState()['notification_services']['gotify'] ?? []),
                     ),
             ],
             __('Push notifications via Gotify')
+        );
+    }
+
+    protected function getAppriseSettings(): Section
+    {
+        return self::makeSettingsSection(
+            'Apprise',
+            self::NOTIFICATION_SERVICES_KEY,
+            NotificationMethods::Apprise->value,
+            [
+                TextInput::make('url')
+                    ->label('Apprise API server URL')
+                    ->placeholder('https://apprise.example.com')
+                    ->required(),
+                TextInput::make('token')
+                    ->label('Configuration token')
+                    ->required()
+                    ->suffixAction(
+                        TestAppriseAction::make()
+                            ->setSettings(fn () => data_get($this->form->getState(), 'notification_services.apprise', [])),
+                    ),
+            ],
+            __('Push notifications via Apprise')
         );
     }
 
@@ -216,56 +237,6 @@ class AppSettingsPage extends SettingsPage
             ],
             new HtmlString('Automatically search for additional products urls via <a href="https://searxng.org/" target="_blank">SearXng</a>')
         );
-    }
-
-    protected function testGotifyNotification(): void
-    {
-        $settings = $this->form->getState()['notification_services']['gotify'] ?? null;
-
-        if (! $settings || empty($settings['url']) || empty($settings['token'])) {
-            Notification::make()
-                ->title('Error')
-                ->body('Please save your Gotify settings first')
-                ->danger()
-                ->send();
-
-            return;
-        }
-
-        try {
-            $url = rtrim($settings['url'], '/').'/message?token='.$settings['token'];
-
-            $response = Http::post($url, [
-                'title' => 'Test Notification',
-                'message' => 'This is a test notification from PriceBuddy',
-                'priority' => 5,
-                'extras' => [
-                    'client::notification' => [
-                        'click' => url('/'),
-                    ],
-                ],
-            ]);
-
-            $response->throw();
-
-            Notification::make()
-                ->title('Success')
-                ->body('Test notification sent successfully')
-                ->success()
-                ->send();
-        } catch (\Illuminate\Http\Client\RequestException $e) {
-            Notification::make()
-                ->title('Failed to send test notification')
-                ->body('HTTP Error: '.$e->getMessage())
-                ->danger()
-                ->send();
-        } catch (\Exception $e) {
-            Notification::make()
-                ->title('Failed to send test notification')
-                ->body('Error: '.$e->getMessage())
-                ->danger()
-                ->send();
-        }
     }
 
     public static function getLocaleFormFields(string $settingsKey): array

@@ -5,7 +5,7 @@ namespace App\Notifications;
 use App\Models\Product;
 use App\Models\Url;
 use App\Models\User;
-use App\Notifications\Messages\GotifyMessage;
+use App\Notifications\Messages\GenericNotificationMessage;
 use App\Services\Helpers\NotificationsHelper;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as DatabaseNotification;
@@ -99,7 +99,15 @@ class PriceAlertNotification extends Notification
 
     public function toGotify($notifiable)
     {
-        return GotifyMessage::create($this->getSummary())
+        return GenericNotificationMessage::create($this->getSummary())
+            ->title($this->getTitle())
+            ->url($this->getUrl())
+            ->priority(5);
+    }
+
+    public function toApprise($notifiable)
+    {
+        return GenericNotificationMessage::create($this->getSummary())
             ->title($this->getTitle())
             ->url($this->getUrl())
             ->priority(5);
@@ -118,6 +126,6 @@ class PriceAlertNotification extends Notification
 
     protected function getUrl(): string
     {
-        return $this->url->url;
+        return $this->url->buy_url;
     }
 }
