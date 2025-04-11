@@ -51,8 +51,6 @@ the CSS and JS not loading. This is due to the app not being able to determine t
 correct URL to use. You can fix this by setting the `APP_URL` and `ASSET_URL` environment
 variables to the correct URL.
 
-```shell
-
 ## Debugging install
 
 The `docker-compose.yml` file has been tested to get you up and running quickly. You 
