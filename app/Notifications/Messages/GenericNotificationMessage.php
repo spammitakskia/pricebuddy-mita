@@ -2,7 +2,7 @@
 
 namespace App\Notifications\Messages;
 
-class GotifyMessage
+class GenericNotificationMessage
 {
     public string $title = '';
 

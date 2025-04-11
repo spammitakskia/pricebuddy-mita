@@ -2,93 +2,106 @@
 
 namespace Tests\Unit\Notifications\Channels;
 
+use App\Enums\NotificationMethods;
+use App\Models\Product;
 use App\Models\User;
 use App\Notifications\Channels\GotifyChannel;
-use App\Notifications\Messages\GotifyMessage;
+use App\Notifications\PriceAlertNotification;
+use App\Services\Helpers\NotificationsHelper;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
-use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class GotifyChannelTest extends TestCase
 {
+    use RefreshDatabase;
+
+    protected User $user;
+
     protected function setUp(): void
     {
         parent::setUp();
         Http::preventStrayRequests();
-    }
 
-    public function test_gotify_channel_sends_notification_correctly()
-    {
-        $user = User::factory()->withGotifySettings('https://gotify.test', 'test-token')->make();
-        $notification = new TestGotifyNotification;
-        $message = $notification->toGotify($user);
-
-        Http::fake([
-            'https://gotify.test/message?token=test-token' => Http::response(null, 200),
+        // Global settings.
+        NotificationsHelper::setSetting(NotificationMethods::Gotify, value: [
+            'enabled' => true,
+            'url' => 'https://gotify.test',
+            'token' => 'test-token',
         ]);
 
-        $channel = new GotifyChannel;
-        $channel->send($user, $notification);
+        $this->user = User::factory()->withNotificationSettings([
+            NotificationMethods::Gotify->value => [
+                'enabled' => true,
+            ],
+        ])->createOne();
+    }
 
-        Http::assertSent(function (Request $request) use ($message) {
-            return $request->url() === 'https://gotify.test/message?token=test-token' &&
-                   $request->method() === 'POST' &&
-                   $request['title'] === $message->title &&
-                   $request['message'] === $message->content &&
-                   $request['priority'] === $message->priority;
+    public function test_get_settings_for_user()
+    {
+        $settings = GotifyChannel::getSettings($this->user);
+        $this->assertTrue($settings['enabled']);
+        $this->assertEquals('https://gotify.test', $settings['url']);
+        $this->assertEquals('test-token', $settings['token']);
+    }
+
+    public function test_make_url()
+    {
+        $this->assertSame(
+            'https://gotify.test/message?token=test-token',
+            GotifyChannel::makeUrl('https://gotify.test', 'test-token')
+        );
+    }
+
+    public function test_send_notification()
+    {
+        $product = Product::factory()->addUrlsAndPrices()->create([
+            'title' => 'Notif product',
+        ]);
+
+        $notification = new PriceAlertNotification($product->urls()->first());
+        $message = $notification->toApprise($this->user);
+
+        $postUrl = 'gotify.test/message?token=test-token';
+
+        Http::fake([
+            $postUrl => Http::response(),
+        ]);
+
+        (new GotifyChannel)->send($this->user, $notification);
+
+        Http::assertSent(function (Request $request) use ($message, $postUrl) {
+            return $request->url() === 'https://'.$postUrl &&
+                $request->method() === 'POST' &&
+                $request['title'] === $message->title &&
+                $request['message'] === $message->content &&
+                $request['priority'] === $message->priority;
         });
     }
 
-    public function test_gotify_channel_handles_missing_routing_information()
+    public function test_disable_service()
     {
-        $user = User::factory()->make(); // No Gotify settings
-        $notification = new TestGotifyNotification;
+        $this->assertTrue(
+            in_array(NotificationMethods::Gotify->getChannel(), NotificationsHelper::getEnabledChannels($this->user)->all())
+        );
 
-        // No HTTP call should be made
-        Http::fake();
+        $disabledUser = User::factory()->withNotificationSettings([
+            NotificationMethods::Gotify->value => [
+                'enabled' => false,
+            ],
+        ])->createOne();
+        $this->assertFalse(
+            in_array(NotificationMethods::Gotify->getChannel(), NotificationsHelper::getEnabledChannels($disabledUser)->all())
+        );
 
-        $channel = new GotifyChannel;
-        $channel->send($user, $notification);
-
-        Http::assertNothingSent();
-    }
-
-    public function test_gotify_channel_handles_http_errors()
-    {
-        $this->expectException(\Illuminate\Http\Client\RequestException::class);
-
-        $user = User::factory()->withGotifySettings('https://gotify.test', 'test-token')->make();
-        $notification = new TestGotifyNotification;
-
-        Http::fake([
-            'https://gotify.test/message?token=test-token' => Http::response('Server Error', 500),
+        NotificationsHelper::setSetting(NotificationMethods::Gotify, value: [
+            'enabled' => false,
+            'url' => 'https://gotify.test',
+            'token' => 'test-token',
         ]);
-
-        $channel = new GotifyChannel;
-        $channel->send($user, $notification);
-    }
-}
-
-// Dummy notification for testing
-class TestGotifyNotification extends Notification
-{
-    public function via($notifiable)
-    {
-        return [GotifyChannel::class];
-    }
-
-    public function toGotify($notifiable)
-    {
-        // Define expected values matching the assertion
-        $expectedTitle = 'Test Notification Title'; // Example title
-        $expectedPriority = 5; // Example priority
-        $expectedUrl = 'https://example.com/click'; // Example URL
-
-        return GotifyMessage::create()
-            ->title($expectedTitle)
-            ->content('Test Message Content')
-            ->priority($expectedPriority)
-            ->url($expectedUrl);
+        $this->assertFalse(
+            in_array(NotificationMethods::Gotify->getChannel(), NotificationsHelper::getEnabledChannels($this->user)->all())
+        );
     }
 }

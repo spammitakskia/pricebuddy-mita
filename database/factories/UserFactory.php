@@ -44,18 +44,13 @@ class UserFactory extends Factory
     }
 
     /**
-     * Configure Gotify notification settings.
+     * Configure notification settings.
      */
-    public function withGotifySettings(string $url = 'https://gotify.example.com', string $token = 'test-token'): static
+    public function withNotificationSettings(array $settings): static
     {
         return $this->state(fn (array $attributes) => [
             'settings' => [
-                'notifications' => [
-                    'gotify' => [
-                        'url' => $url,
-                        'token' => $token,
-                    ],
-                ],
+                'notifications' => $settings,
             ],
         ]);
     }
