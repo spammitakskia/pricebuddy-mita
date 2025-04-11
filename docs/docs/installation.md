@@ -44,6 +44,15 @@ file for the environment variables that can be set.
 
 If you just use the variables set in the docker compose file, you should be good to go.
 
+## Reverse proxy configuration
+
+If you are using a reverse proxy (eg nginx) to access the app, you may have issues with
+the CSS and JS not loading. This is due to the app not being able to determine the
+correct URL to use. You can fix this by setting the `APP_URL` and `ASSET_URL` environment
+variables to the correct URL.
+
+```shell
+
 ## Debugging install
 
 The `docker-compose.yml` file has been tested to get you up and running quickly. You 
