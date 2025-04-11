@@ -53,8 +53,8 @@ class AppriseChannel
     {
         $settings = NotificationsHelper::getSettings(NotificationMethods::Apprise);
         $userSettings = $notifiable->getNotificationSettings(NotificationMethods::Apprise);
-        $settings['tags'] = data_get($userSettings, 'tags', 'all');
-        $settings['token'] = data_get($userSettings, 'token', $settings['token'] ?? '');
+        $settings['tags'] = empty($userSettings['tags']) ? 'all' : $userSettings['tags'];
+        $settings['token'] = empty($userSettings['token']) ? ($settings['token'] ?? '') : $userSettings['token'];
 
         return $settings;
     }
