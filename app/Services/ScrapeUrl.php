@@ -183,6 +183,7 @@ class ScrapeUrl
         $method = match ($type) {
             'regex' => 'getRegex',
             'json' => 'getJson',
+            'xpath' => 'getXpath',
             default => 'getSelector'
         };
 

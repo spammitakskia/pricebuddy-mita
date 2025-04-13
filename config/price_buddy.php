@@ -38,6 +38,7 @@ return [
                 'title',
                 'h1',
             ],
+            'xpath' => [],
             'regex' => [],
         ],
         'price' => [
@@ -49,6 +50,7 @@ return [
                 '[class^="price"]',
                 '[class*="price"]',
             ],
+            'xpath' => [],
             'regex' => [
                 '~\"price\"\:\s?\"(.*?)\"~',        // Something that looks like a price, in a json object, eg "price": "99.99"
                 '~>\$(\d+(\.\d{2})?)<~',            // Something that looks like a price, in a tag, eg >$99.99<
@@ -60,6 +62,7 @@ return [
                 'meta[property="og:image"]|content',
                 'meta[property="og:image:secure_url"]|content',
             ],
+            'xpath' => [],
             'regex' => [
                 '~\"hiRes\":\"(.+?)\"~',            // Amazon
                 '~\"image\"\:\s?\"(.*?\.jpg)\"~',   // Something that looks like an image, in a json object, eg "price": "99.99"
