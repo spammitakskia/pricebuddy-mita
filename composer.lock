@@ -2267,16 +2267,16 @@
         },
         {
             "name": "jez500/web-scraper-for-laravel",
-            "version": "1.0.4",
+            "version": "1.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jez500/Web-scraper-for-Laravel.git",
-                "reference": "4554ab6c54bc4fdc4c4f35854ced9d40ba46518b"
+                "reference": "3758c2e344967d700a5fce05f926c01ebc238810"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jez500/Web-scraper-for-Laravel/zipball/4554ab6c54bc4fdc4c4f35854ced9d40ba46518b",
-                "reference": "4554ab6c54bc4fdc4c4f35854ced9d40ba46518b",
+                "url": "https://api.github.com/repos/jez500/Web-scraper-for-Laravel/zipball/3758c2e344967d700a5fce05f926c01ebc238810",
+                "reference": "3758c2e344967d700a5fce05f926c01ebc238810",
                 "shasum": ""
             },
             "require": {
@@ -2315,9 +2315,9 @@
             "description": "A web scraper for laravel",
             "support": {
                 "issues": "https://github.com/jez500/Web-scraper-for-Laravel/issues",
-                "source": "https://github.com/jez500/Web-scraper-for-Laravel/tree/1.0.4"
+                "source": "https://github.com/jez500/Web-scraper-for-Laravel/tree/1.0.5"
             },
-            "time": "2025-02-09T07:19:18+00:00"
+            "time": "2025-04-12T23:35:44+00:00"
         },
         {
             "name": "kirschbaum-development/eloquent-power-joins",

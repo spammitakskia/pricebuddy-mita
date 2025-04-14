@@ -198,6 +198,7 @@ class StoreResource extends Resource
                 ->label('Type')
                 ->options([
                     'selector' => 'CSS Selector',
+                    'xpath' => 'XPath',
                     'regex' => 'Regex',
                     'json' => 'JSON path',
                 ])
@@ -211,6 +212,7 @@ class StoreResource extends Resource
                 ->required()
                 ->hintIcon(Icons::Help->value, fn (Forms\Get $get) => match ($get($key.'.type')) {
                     'selector' => 'CSS selector to get the value. Use |attribute_name to get an attribute value instead of the element content',
+                    'xpath' => 'XPath expression to get the value. Use @attribute for attributes, text() for text content',
                     'regex' => 'Regex pattern to get the value. Enclose the value in () to get the value',
                     'json' => 'JSON path to get the value. Use dot notation to get nested values',
                     default => ''
