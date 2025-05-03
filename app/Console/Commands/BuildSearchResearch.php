@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Services\SearchService;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
+
 use function Laravel\Prompts\text;
 
 class BuildSearchResearch extends Command implements PromptsForMissingInput
@@ -19,7 +20,7 @@ class BuildSearchResearch extends Command implements PromptsForMissingInput
     /**
      * The console command description.
      */
-    protected $description = 'Build search research for a product';
+    protected $description = 'Build search research cache for a product';
 
     /**
      * Execute the console command.
@@ -34,6 +35,8 @@ class BuildSearchResearch extends Command implements PromptsForMissingInput
             ->setUseLaravelLog(true);
 
         $service->build($productName);
+
+        $this->getOutput()->success('Done building search cache');
 
         return self::SUCCESS;
     }

@@ -3,12 +3,12 @@
 namespace App\Dto;
 
 use App\Enums\IsProductPage as IsProductPageEnum;
-use App\Models\SearchResultUrl;
 use App\Models\Store;
 use App\Services\AutoCreateStore;
 use App\Services\Helpers\CurrencyHelper;
 use App\Services\ScrapeUrl;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Uri;
 use Jez500\WebScraperForLaravel\Facades\WebScraper;
 use Jez500\WebScraperForLaravel\WebScraperInterface;
 
@@ -28,20 +28,22 @@ class ProductResearchUrlDto
 
     protected ?string $html = null;
 
+    protected Uri $uri;
+
     protected int $httpTimeout = 10;
 
     public function __construct(
-        protected SearchResultUrl $result,
+        protected string $url,
         protected $cached = false,
     ) {
-        $this->store = $this->result->store;
+        $this->uri = Uri::of($url);
 
         // Disable notifications and logging for analysis.
         ScrapeUrl::$sendUiNotifications = false;
         ScrapeUrl::$logErrors = false;
         AutoCreateStore::$logErrors = false;
 
-        $this->isProductPage = Cache::remember('search_result_dto_'.$result->url, now()->addMinutes(30), function () {
+        $this->isProductPage = Cache::remember('search_result_dto_'.$url, now()->addMinutes(30), function () {
             $this->isProductPage = IsProductPageEnum::NotProcessed;
             $this->guessIsProductPage();
 
@@ -58,7 +60,7 @@ class ProductResearchUrlDto
         $newStatus = IsProductPageEnum::Maybe;
         if ($this->canScrapeViaStore()) {
             $newStatus = IsProductPageEnum::YesViaStore;
-        } else if ($this->canScrapeViaAuto()) {
+        } elseif ($this->canScrapeViaAuto()) {
             $newStatus = IsProductPageEnum::YesViaAutoCreate;
         }
 
@@ -81,7 +83,7 @@ class ProductResearchUrlDto
 
     public function getScrapeUrlService(): ScrapeUrl
     {
-        return ScrapeUrl::new($this->result->url)
+        return ScrapeUrl::new($this->url)
             ->setMaxAttempts(1)
             ->setConnectTimeout($this->httpTimeout)
             ->setRequestTimeout($this->httpTimeout);
@@ -118,20 +120,15 @@ class ProductResearchUrlDto
 
     public function getUrl(): string
     {
-        return $this->result->url;
+        return $this->url;
     }
 
     public function getScraper(): WebScraperInterface
     {
-        return WebScraper::http()->from($this->result->url)
+        return WebScraper::http()->from($this->url)
             ->setConnectTimeout($this->httpTimeout)
             ->setRequestTimeout($this->httpTimeout)
             ->get();
-    }
-
-    public function getSearchResult(): SearchResultUrl
-    {
-        return $this->result;
     }
 
     public function hasStore(): bool
@@ -141,17 +138,23 @@ class ProductResearchUrlDto
 
     public function getStore(): ?Store
     {
+        if ($this->store) {
+            return $this->store;
+        }
+
+        $this->store = Store::query()->domainFilter($this->uri->host())->first();
+
         return $this->store;
     }
 
     public function getPriceRaw(): ?string
     {
-        return $this->getScrapedValue( 'price');
+        return $this->getScrapedValue('price');
     }
 
     public function getImage(): ?string
     {
-        return $this->getScrapedValue( 'image');
+        return $this->getScrapedValue('image');
     }
 
     protected function getScrapedValue(string $strategy): ?string

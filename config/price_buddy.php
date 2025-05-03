@@ -47,6 +47,7 @@ return [
                 '.a-price .a-offscreen',            // Amazon
                 '[itemProp="price"]|content',
                 '.price',
+                '.product-price, .product-price-value',
                 '[class^="price"]',
                 '[class*="price"]',
             ],

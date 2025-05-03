@@ -21,30 +21,41 @@ class AutoCreateStore
 
     protected array $strategies = [];
 
-    public function __construct(protected string $url, public ?string $html = null, string $scraper = self::DEFAULT_SCRAPER)
+    public static bool $logErrors = true;
+
+    public function __construct(protected string $url, public ?string $html = null, string $scraper = self::DEFAULT_SCRAPER, int $timeout = 30)
     {
         $this->strategies = config('price_buddy.auto_create_store_strategies', []);
 
+        logger()->info('Auto create store', [
+            'url' => $this->url,
+            'scraper' => $scraper,
+            'timeout' => $timeout,
+        ]);
+
         if (empty($html)) {
             $this->html = WebScraper::make($scraper)
+                ->setConnectTimeout($timeout)
+                ->setRequestTimeout($timeout)
                 ->from($url)
                 ->get()
                 ->getBody();
         }
     }
 
-    public static function new(string $url, ?string $html = null, string $scraper = self::DEFAULT_SCRAPER): self
+    public static function new(string $url, ?string $html = null, string $scraper = self::DEFAULT_SCRAPER, int $timeout = 30): self
     {
         return resolve(static::class, [
             'url' => $url,
             'html' => $html,
             'scraper' => $scraper,
+            'timeout' => $timeout,
         ]);
     }
 
-    public static function canAutoCreateFromUrl(string $url): bool
+    public static function canAutoCreateFromUrl(string $url, int $timeout = 30): bool
     {
-        return ! is_null(self::new($url)->getStoreAttributes());
+        return ! is_null(self::new($url, timeout: $timeout)->getStoreAttributes());
     }
 
     public static function createStoreFromUrl(string $url): ?Store
@@ -69,7 +80,7 @@ class AutoCreateStore
 
         // Exit if required fields are missing.
         if (empty($strategy['title']['value']) || empty($strategy['price']['value'])) {
-            logger()->error('Unable to auto create store', [
+            $this->errorLog('Unable to auto create store', [
                 'url' => $this->url,
                 'strategy' => $strategy,
                 'html' => $this->html,
@@ -243,5 +254,24 @@ class AutoCreateStore
     protected function getStrategy(string $fieldName, string $type): ?array
     {
         return data_get($this->strategies, $fieldName.'.'.$type);
+    }
+
+    protected function getStrategyValue(string $fieldName, string $type): ?string
+    {
+        return data_get($this->getStrategy($fieldName, $type), 'value');
+    }
+
+    public function getHtml(): ?string
+    {
+        return $this->html;
+    }
+
+    protected function errorLog(string $message, array $data = []): void
+    {
+        if (! self::$logErrors) {
+            return;
+        }
+
+        logger()->error($message, $data);
     }
 }

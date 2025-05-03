@@ -3,15 +3,17 @@
 namespace App\Services;
 
 use App\Dto\ProductResearchUrlDto;
+use App\Enums\Icons;
 use App\Enums\IntegratedServices;
-use App\Models\SearchResultUrl;
 use App\Models\Store;
 use App\Models\UrlResearch;
+use App\Services\Helpers\IntegrationHelper;
 use App\Services\Helpers\SettingsHelper;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class SearchService
 {
@@ -19,17 +21,19 @@ class SearchService
 
     public const CACHE_TTL_MINS = 30;
 
-    public const LOG_KEY = self::CACHE_KEY.'log:';
+    public const LOG_KEY = 'log';
 
     public const LOG_TTL_MINS = 60; // 1 hour
 
-    public int $timeoutSecondsPerUrl = 20;
+    public const int DEFAULT_MAX_PAGES = 1;
 
     public Collection $results;
 
     public ?string $searchQuery = null;
 
     protected bool $useLaravelLog = false;
+
+    protected array $ignoredExtensions = ['pdf', 'doc', 'xls', 'ppt'];
 
     public function __construct(?string $query = null)
     {
@@ -53,14 +57,15 @@ class SearchService
             $this
                 ->setIsComplete(false)
                 ->setInProgress(true)
-                ->getRawResults($searchQuery)
+                ->getRawResults()
+                ->filterResults()
                 ->normalizeStructure()
                 ->addStores()
                 ->hydrateWithScrapedData()
                 ->saveUrlResearch()
                 ->log('Completed research for: '.$searchQuery)
                 ->setIsComplete(true);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             logger()->error($e->getMessage());
         }
 
@@ -91,17 +96,29 @@ class SearchService
         return $this;
     }
 
-    public function getRawResults(string $searchQuery): self
+    public function getRawResults(): self
     {
         $this->log('Fetching raw search results');
+        $settings = IntegrationHelper::getSearchSettings();
 
-        $results = Cache::remember(
-            $this->getCacheKey('results', $searchQuery),
-            now()->addMinutes(self::CACHE_TTL_MINS),
-            fn () => Http::get(data_get(self::getSettings(), 'url'), [
-                'format' => 'json',
-                'q' => $searchQuery,
-            ])->json('results'));
+        $results = [];
+
+        // For each page, get the results and merge them into the results array.
+        for ($page = 1; $page <= data_get($settings, 'max_pages', self::DEFAULT_MAX_PAGES); $page++) {
+            // Merge page results, cache if not already cached.
+            $results = array_merge(
+                $results,
+                Cache::remember(
+                    $this->getCacheKey('results', $this->searchQuery).':page-'.$page,
+                    now()->addMinutes(self::CACHE_TTL_MINS),
+                    fn () => Http::get(data_get(self::getSettings(), 'url'), [
+                        'format' => 'json',
+                        'q' => $this->searchQuery,
+                        'pageno' => $page,
+                    ])->json('results', [])
+                )
+            );
+        }
 
         $this->results = collect($results);
 
@@ -110,10 +127,21 @@ class SearchService
         return $this;
     }
 
+    protected function filterResults(): self
+    {
+        $this->log('Filtering incompatible results');
+
+        $this->results = $this->results->filter(function ($result) {
+            $extension = pathinfo(data_get($result, 'url'), PATHINFO_EXTENSION);
+
+            return empty($extension) || ! in_array($extension, $this->ignoredExtensions);
+        });
+
+        return $this;
+    }
+
     protected function normalizeStructure(): self
     {
-        $this->log('Normalizing search results');
-
         $this->results = $this->results->map(function ($result, $idx) {
             return [
                 'title' => data_get($result, 'title'),
@@ -150,24 +178,23 @@ class SearchService
     {
         $this->log('Hydrating results');
 
-        $existing = UrlResearch::query()
-            ->whereIn('url', $this->results->pluck('url'))
-            ->get()
-            ->keyBy('url');
+        $existing = $this->getUrlResearch();
 
         $this->results = $this->results
             ->map(function ($result) use ($existing) {
+                $logArgs = collect($result)->only(['title', 'url', 'domain'])->all();
+
                 if ($existing->get($result['url'])) {
-                    $this->log(__('Using cache ":title" (:domain)', $result), ['subtitle' => $result['url']]);
+                    $this->log(__('Using cache ":title" (:domain)', $logArgs), ['subtitle' => $result['url'], 'icon' => Icons::Database->value]);
 
                     return $result;
                 }
 
                 $timeStart = microtime(true);
-                $this->log(__('Analyzing ":title" (:domain)', $result), ['subtitle' => $result['url']]);
+                $this->log(__('Analyzing ":title" (:domain)', $logArgs), ['subtitle' => $result['url']]);
 
                 try {
-                    $dto = new ProductResearchUrlDto(result: new SearchResultUrl($result), cached: true);
+                    $dto = new ProductResearchUrlDto(url: $result['url'], cached: true);
 
                     $result = array_merge($result, [
                         'price' => $dto->getPrice(),
@@ -176,8 +203,14 @@ class SearchService
                         'is_product_page' => $dto->getIsProductPage()->value,
                         'html' => $dto->getHtml(),
                     ]);
+
+                    if (! empty($result['price'])) {
+                        $this->replaceLastLogEntry(__('Price found ":title" (:domain)', $logArgs));
+                    } else {
+                        $this->replaceLastLogEntry(__('No Price found ":title" (:domain)', $logArgs), ['icon' => Icons::Warning->value]);
+                    }
                 } catch (Exception $e) {
-                    $this->log(__('Failed for ":title": '.$e->getMessage(), $result), ['subtitle' => $result['url']]);
+                    $this->log(__('Failed for ":title": '.$e->getMessage(), $logArgs), ['subtitle' => $result['url']]);
                 }
 
                 $result['execution_time'] = (microtime(true) - $timeStart);
@@ -185,8 +218,8 @@ class SearchService
                 return $result;
             });
 
-            return $this;
-        }
+        return $this;
+    }
 
     public static function getSettings(): array
     {
@@ -196,9 +229,17 @@ class SearchService
         );
     }
 
+    public function getUrlResearch(): Collection
+    {
+        return UrlResearch::query()
+            ->whereIn('url', $this->results->pluck('url'))
+            ->get()
+            ->keyBy('url');
+    }
+
     protected function getCacheKey(string $type, string $key): string
     {
-        return self::CACHE_KEY.$type.':'.urlencode($key);
+        return self::CACHE_KEY.$type.':'.Str::slug($key);
     }
 
     protected function getInProgressKey(): string
@@ -213,7 +254,7 @@ class SearchService
 
     protected function getLogKey(): string
     {
-        return self::LOG_KEY.urlencode($this->searchQuery);
+        return $this->getCacheKey(self::LOG_KEY, $this->searchQuery);
     }
 
     public function getInProgress(?string $searchQuery = null): false|string
@@ -258,7 +299,7 @@ class SearchService
 
         $cache[] = [
             'message' => $message,
-            'data' => $data,
+            'data' => array_merge(['icon' => Icons::Success->value], $data),
             'timestamp' => now()->toDateTimeString(),
         ];
 
@@ -267,6 +308,17 @@ class SearchService
         if ($this->useLaravelLog) {
             logger()->info($message, $data);
         }
+
+        return $this;
+    }
+
+    public function replaceLastLogEntry(string $message, array $data = []): self
+    {
+        $cache = Cache::get($this->getLogKey(), []);
+        $last = array_pop($cache);
+        Cache::put($this->getLogKey(), $cache, now()->addMinutes(self::LOG_TTL_MINS));
+
+        $this->log($message, array_merge($last['data'], $data));
 
         return $this;
     }

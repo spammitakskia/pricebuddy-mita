@@ -11,6 +11,11 @@ class IntegrationHelper
         return SettingsHelper::getSetting('integrated_services', []);
     }
 
+    public static function setSettings(array $settings): void
+    {
+        SettingsHelper::setSetting('integrated_services', $settings);
+    }
+
     public static function getSearchSettings(): array
     {
         return data_get(self::getSettings(), IntegratedServices::SearXng->value, []);

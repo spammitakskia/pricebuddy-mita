@@ -6,6 +6,8 @@ use App\Filament\Resources\ProductResource\Actions\AddSearchResultUrlAction;
 use App\Filament\Resources\ProductResource\Actions\IgnoreSearchResultUrlAction;
 use App\Models\Product;
 use App\Models\SearchResultUrl;
+use App\Models\UrlResearch;
+use App\Services\Helpers\CurrencyHelper;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -27,7 +29,8 @@ class ProductSearch extends BaseWidget
         /** @var Product $product */
         $product = $this->record;
 
-        SearchResultUrl::$searchQuery = 'Buy '.$product->title.' australia';
+        //        SearchResultUrl::$populateResearch = true;
+        //        SearchResultUrl::setProductSearchQuery($product->title);
 
         return $table
             ->heading('Search results')
@@ -39,16 +42,16 @@ class ProductSearch extends BaseWidget
             )
             ->columns(self::tableColumns())
             ->actions([
-                AddSearchResultUrlAction::make('add_url')
-                    ->setProduct($product),
-                AddSearchResultUrlAction::make('add_store')
-                    ->label(__('Add store'))
-                    ->color('gray')
-                    ->setProduct($product)
-                    ->visible(fn (SearchResultUrl $record) => is_null($record->store_id)),
-                IgnoreSearchResultUrlAction::make('ignore_result')
-                    ->setProduct($product)
-                    ->after(fn () => $this->dispatch('ResetProductSearchTable')),
+                //                AddSearchResultUrlAction::make('add_url')
+                //                    ->setProduct($product),
+                //                AddSearchResultUrlAction::make('add_store')
+                //                    ->label(__('Add store'))
+                //                    ->color('gray')
+                //                    ->setProduct($product)
+                //                    ->visible(fn (SearchResultUrl $record) => is_null($record->store_id)),
+                //                IgnoreSearchResultUrlAction::make('ignore_result')
+                //                    ->setProduct($product)
+                //                    ->after(fn () => $this->dispatch('ResetProductSearchTable')),
             ])
             ->bulkActions([
                 // Tables\Actions\DeleteBulkAction::make(),
@@ -64,7 +67,7 @@ class ProductSearch extends BaseWidget
                     Tables\Columns\TextColumn::make('title')
                         ->label('Title')
                         ->weight(FontWeight::Bold)
-                        ->url(fn (SearchResultUrl $record) => $record->url),
+                        ->url(fn (UrlResearch $record) => $record->url),
                     Tables\Columns\TextColumn::make('url')
                         ->label('Url')
                         ->color('gray')
@@ -73,11 +76,23 @@ class ProductSearch extends BaseWidget
                 ])->extraAttributes(['class' => 'w-xl']),
 
                 Tables\Columns\Layout\Stack::make([
+
+                    Tables\Columns\TextColumn::make('price')
+                        ->label('Price')
+                        ->weight(FontWeight::Bold)
+                        ->formatStateUsing(fn (?float $state, UrlResearch $record): HtmlString => new HtmlString(
+                            empty($state) ? 'No price' : CurrencyHelper::toString($state, locale: $record->store?->locale, iso: $record->store?->currency)
+                        ))
+                        ->extraAttributes(['class' => 'md:text-right md:justify-end']),
+
                     Tables\Columns\TextColumn::make('store.name')
                         ->label('Store')
+                        ->color('gray')
                         ->formatStateUsing(fn (string $state): HtmlString => new HtmlString(
                             $state ?: 'Add store'
-                        )),
+                        ))
+                        ->extraAttributes(['class' => 'md:text-right md:justify-end']),
+
                 ])->extraAttributes(['class' => 'md:w-sm md:align-right md:pr-8'])->grow(false),
 
             ])->from('sm'),

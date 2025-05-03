@@ -2,20 +2,32 @@
 
 namespace App\Filament\Resources\ProductResource\Widgets;
 
-use App\Filament\Resources\ProductResource\Actions\AddSearchResultStoreAction;
-use App\Filament\Resources\ProductResource\Actions\AddSearchResultUrlAction;
-use App\Models\SearchResultUrl;
+use App\Filament\Resources\ProductResource\Actions\AddSearchResultUrlBulkAction;
+use App\Models\Product;
+use App\Models\UrlResearch;
+use App\Providers\Filament\AdminPanelProvider;
+use App\Services\Helpers\IntegrationHelper;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 
 class CreateViaSearchTable extends BaseWidget
 {
+    public const DEFAULT_PAGINATION = 100;
+
     protected $listeners = [
         'updateCreateViaSearchTable' => 'reRenderTable',
         'emptyCreateViaSearchTable' => 'emptyRenderTable',
     ];
 
     public ?string $searchQuery = null;
+
+    public array $filters = [];
+
+    public ?Product $product = null;
 
     public static function canView(): bool
     {
@@ -24,24 +36,47 @@ class CreateViaSearchTable extends BaseWidget
 
     public function table(Table $table): Table
     {
-        SearchResultUrl::setProductSearchQuery($this->searchQuery);
+        $settings = IntegrationHelper::getSearchSettings();
+        $prefix = data_get($settings, 'search_prefix');
 
         return $table
-            ->heading('Search results for "'.$this->searchQuery.'"')
+            ->heading('Search results for "'.($prefix ? $prefix.' ' : '').$this->searchQuery.'"')
+            ->description('Select the results you want to add to '.($this->product ? '"'.$this->product->title.'"' : 'a new product'))
             ->query(
-                SearchResultUrl::query()->with('store')
+                UrlResearch::query()->searchQuery($this->searchQuery)
+                    ->orderByRaw('ISNULL(price), price ASC')
                     ->orderByDesc('store_id')
-                    ->orderByDesc('relevance')
+                    ->orderByDesc('id')
             )
             ->columns(ProductSearch::tableColumns())
-            ->actions([
-                AddSearchResultUrlAction::make()
-                    ->setProduct(null),
-                AddSearchResultStoreAction::make(),
-            ])
+            ->recordClasses(fn (UrlResearch $record) => empty($record->price) ? 'opacity-50' : '')
+            ->filters([
+                Filter::make('min')
+                    ->label('Min price')
+                    ->form([
+                        TextInput::make('min_price')->numeric()->nullable()->placeholder('0')->default('0'),
+                    ])
+                    ->query(function (Builder $query, array $data): void {
+                        $query->setFilters($data);
+                    }),
+                Filter::make('max')
+                    ->label('Max price')
+                    ->form([
+                        TextInput::make('max_price')->numeric()->nullable()->placeholder('No limit'),
+                    ])
+                    ->query(function (Builder $query, array $data): void {
+                        $query->setFilters($data);
+                    }),
+            ], layout: FiltersLayout::AboveContent)
+            ->paginated(AdminPanelProvider::DEFAULT_PAGINATION)
+            ->defaultPaginationPageOption(self::DEFAULT_PAGINATION)
             ->bulkActions([
-                // Tables\Actions\DeleteBulkAction::make(),
-            ]);
+                AddSearchResultUrlBulkAction::make()->withSearchQuery($this->searchQuery)
+                    ->withProduct($this->product),
+            ])
+            ->emptyStateHeading(fn () => 'No results found for "'.$this->searchQuery.'"')
+            ->emptyStateDescription(fn () => 'Unable to parse any prices from results')
+            ->checkIfRecordIsSelectableUsing(fn (UrlResearch $record): bool => ! empty($record->price));
     }
 
     public function reRenderTable(?string $searchQuery): void

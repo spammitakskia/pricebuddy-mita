@@ -27,6 +27,14 @@ enum Icons: string
 
     case Import = 'heroicon-o-arrow-down-on-square';
 
+    case Warning = 'heroicon-o-exclamation-triangle';
+
+    case Success = 'heroicon-o-check-circle';
+
+    case Database = 'heroicon-o-circle-stack';
+
+    case ElipsisHorizontal = 'heroicon-o-ellipsis-horizontal';
+
     public static function getTrendIcon(?string $trend): string
     {
         return match ($trend) {
