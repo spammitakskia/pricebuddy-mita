@@ -27,6 +27,7 @@ class UrlResearch extends Model
 
     protected $casts = [
         'url' => 'string',
+        'price' => 'float',
         'strategies' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

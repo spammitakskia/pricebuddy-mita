@@ -4,11 +4,9 @@ namespace App\Services;
 
 use App\Dto\ProductResearchUrlDto;
 use App\Enums\Icons;
-use App\Enums\IntegratedServices;
 use App\Models\Store;
 use App\Models\UrlResearch;
 use App\Services\Helpers\IntegrationHelper;
-use App\Services\Helpers\SettingsHelper;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -17,13 +15,13 @@ use Illuminate\Support\Str;
 
 class SearchService
 {
-    public const CACHE_KEY = 'search:';
+    public const string CACHE_KEY = 'search:';
 
-    public const CACHE_TTL_MINS = 30;
+    public const int CACHE_TTL_MINS = 30;
 
-    public const LOG_KEY = 'log';
+    public const string LOG_KEY = 'log';
 
-    public const LOG_TTL_MINS = 60; // 1 hour
+    public const int LOG_TTL_MINS = 60; // 1 hour
 
     public const int DEFAULT_MAX_PAGES = 1;
 
@@ -96,26 +94,38 @@ class SearchService
         return $this;
     }
 
+    public function getSearchUrl(): ?string
+    {
+        return data_get(self::getSettings(), 'url');
+    }
+
+    public function getMaxPages(): int
+    {
+        return data_get(self::getSettings(), 'max_pages', self::DEFAULT_MAX_PAGES);
+    }
+
     public function getRawResults(): self
     {
         $this->log('Fetching raw search results');
-        $settings = IntegrationHelper::getSearchSettings();
 
         $results = [];
 
         // For each page, get the results and merge them into the results array.
-        for ($page = 1; $page <= data_get($settings, 'max_pages', self::DEFAULT_MAX_PAGES); $page++) {
+        for ($page = 1; $page <= $this->getMaxPages(); $page++) {
             // Merge page results, cache if not already cached.
             $results = array_merge(
                 $results,
                 Cache::remember(
                     $this->getCacheKey('results', $this->searchQuery).':page-'.$page,
                     now()->addMinutes(self::CACHE_TTL_MINS),
-                    fn () => Http::get(data_get(self::getSettings(), 'url'), [
-                        'format' => 'json',
-                        'q' => $this->searchQuery,
-                        'pageno' => $page,
-                    ])->json('results', [])
+                    fn () => Http::timeout(10)
+                        ->get($this->getSearchUrl(), [
+                            'format' => 'json',
+                            'q' => $this->searchQuery,
+                            'pageno' => $page,
+                        ])
+                        ->throw()
+                        ->json('results', [])
                 )
             );
         }
@@ -223,10 +233,7 @@ class SearchService
 
     public static function getSettings(): array
     {
-        return SettingsHelper::getSetting(
-            'integrated_services.'.IntegratedServices::SearXng->value,
-            []
-        );
+        return IntegrationHelper::getSearchSettings();
     }
 
     public function getUrlResearch(): Collection
@@ -315,10 +322,13 @@ class SearchService
     public function replaceLastLogEntry(string $message, array $data = []): self
     {
         $cache = Cache::get($this->getLogKey(), []);
-        $last = array_pop($cache);
-        Cache::put($this->getLogKey(), $cache, now()->addMinutes(self::LOG_TTL_MINS));
 
-        $this->log($message, array_merge($last['data'], $data));
+        if (! empty($cache)) {
+            $last = array_pop($cache);
+            Cache::put($this->getLogKey(), $cache, now()->addMinutes(self::LOG_TTL_MINS));
+        }
+
+        $this->log($message, array_merge($last['data'] ?? [], $data));
 
         return $this;
     }

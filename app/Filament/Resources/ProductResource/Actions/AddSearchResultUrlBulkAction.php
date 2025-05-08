@@ -7,6 +7,7 @@ use App\Enums\Icons;
 use App\Models\Product;
 use App\Models\Url;
 use App\Models\UrlResearch;
+use Exception;
 use Filament\Actions\Concerns\CanCustomizeProcess;
 use Filament\Tables\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Collection;
@@ -46,23 +47,38 @@ class AddSearchResultUrlBulkAction extends BulkAction
                 }
 
                 if (! $product) {
-                    /** @var Product $product */
-                    $product = call_user_func(new CreateProductAction, [
-                        'title' => $searchQuery,
-                    ]);
+                    try {
+                        /** @var Product $product */
+                        $product = call_user_func(new CreateProductAction, [
+                            'title' => $searchQuery,
+                        ]);
+                    } catch (Exception $e) {
+                        logger()->error('Failed to create product from search: '.$e->getMessage(), [
+                            'search_query' => $searchQuery,
+                        ]);
+
+                        return;
+                    }
                 }
 
                 /** @phpstan-ignore-next-line */
                 $records->each(function (UrlResearch $result) use ($product, &$image) {
-                    // Create url and pass the product id and user id.
-                    $url = Url::createFromUrl($result->url, $product->getKey(), auth()->id(), true);
+                    try {
+                        // Create url and pass the product id and user id.
+                        $url = Url::createFromUrl($result->url, $product->getKey(), auth()->id(), true);
 
-                    if ($url) {
-                        // Set the product image to the first url that has an image.
-                        $resultImage = data_get($url->toArray(), 'scrape.image');
-                        if (! empty($resultImage) && empty($image)) {
-                            $image = $resultImage;
+                        if ($url) {
+                            // Set the product image to the first url that has an image.
+                            $resultImage = data_get($url->toArray(), 'scrape.image');
+                            if (! empty($resultImage) && empty($image)) {
+                                $image = $resultImage;
+                            }
                         }
+                    } catch (Exception $e) {
+                        logger()->warning('Failed to create URL: '.$e->getMessage(), [
+                            'url' => $result->url,
+                            'product_id' => $product->getKey(),
+                        ]);
                     }
                 });
 

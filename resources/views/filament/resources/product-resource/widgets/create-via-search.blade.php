@@ -21,13 +21,13 @@
     <div class="min-h-96">
 
         @if ($showLog)
-            <div wire:poll.visible="refreshProgress" x-init="window.document.getElementById('searchHeading').scrollIntoView({behavior: 'smooth'})">
+            <div wire:poll.visible="refreshProgress" x-init="window.document.getElementById('searchHeading')?.scrollIntoView({behavior: 'smooth'})">
                 <livewire:search-log :messages="$progressLog" :complete="$isComplete" wire:key="{{ $searchLogKey }}" />
             </div>
         @endif
 
         @if ($isComplete && $searchQuery)
-            <div wire:key="{{ $resultsKey }}" wire:loading.delay.longer.class="opacity-10" class="mt-6" x-init="window.document.getElementById('searchHeading').scrollIntoView({behavior: 'smooth'})">
+            <div wire:key="{{ $resultsKey }}" wire:loading.delay.longer.class="opacity-10" class="mt-6" x-init="window.document.getElementById('searchHeading')?.scrollIntoView({behavior: 'smooth'})">
                 @livewire(\App\Filament\Resources\ProductResource\Widgets\CreateViaSearchTable::class, [
                     'searchQuery' => $searchQuery,
                     'filters' => $filters,

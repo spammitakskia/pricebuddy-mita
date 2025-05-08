@@ -21,7 +21,7 @@ class AutoCreateStore
 
     protected array $strategies = [];
 
-    public static bool $logErrors = true;
+    public bool $logErrors = true;
 
     public function __construct(protected string $url, public ?string $html = null, string $scraper = self::DEFAULT_SCRAPER, int $timeout = 30)
     {
@@ -266,9 +266,16 @@ class AutoCreateStore
         return $this->html;
     }
 
+    public function setLogErrors(bool $logErrors): self
+    {
+        $this->logErrors = $logErrors;
+
+        return $this;
+    }
+
     protected function errorLog(string $message, array $data = []): void
     {
-        if (! self::$logErrors) {
+        if (! $this->logErrors) {
             return;
         }
 

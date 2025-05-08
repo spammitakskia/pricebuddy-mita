@@ -38,12 +38,8 @@ class ProductResearchUrlDto
     ) {
         $this->uri = Uri::of($url);
 
-        // Disable notifications and logging for analysis.
-        ScrapeUrl::$sendUiNotifications = false;
-        ScrapeUrl::$logErrors = false;
-        AutoCreateStore::$logErrors = false;
-
-        $this->isProductPage = Cache::remember('search_result_dto_'.$url, now()->addMinutes(30), function () {
+        $cacheKey = 'search_result_dto_'.md5($url);
+        $this->isProductPage = Cache::remember($cacheKey, now()->addMinutes(30), function () {
             $this->isProductPage = IsProductPageEnum::NotProcessed;
             $this->guessIsProductPage();
 
@@ -85,6 +81,8 @@ class ProductResearchUrlDto
     {
         return ScrapeUrl::new($this->url)
             ->setMaxAttempts(1)
+            ->setLogErrors(false)
+            ->setSendUiNotifications(false)
             ->setConnectTimeout($this->httpTimeout)
             ->setRequestTimeout($this->httpTimeout);
     }
@@ -92,7 +90,8 @@ class ProductResearchUrlDto
     public function getAutoCreateStoreService(): AutoCreateStore
     {
         if (! $this->autoCreateStore) {
-            $this->autoCreateStore = AutoCreateStore::new($this->getUrl(), timeout: $this->httpTimeout);
+            $this->autoCreateStore = AutoCreateStore::new($this->getUrl(), timeout: $this->httpTimeout)
+                ->setLogErrors(false);
         }
 
         return $this->autoCreateStore;

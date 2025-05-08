@@ -129,6 +129,8 @@ class CreateViaSearchForm extends Widget implements HasForms
         // simply redirect to the page to refresh the component.
         if ($this->searchQuery !== $formSearchQuery && ! empty($formSearchQuery) && ! empty($this->searchQuery)) {
             $this->redirect($this->pageUrl.'?searchQuery='.$formSearchQuery);
+
+            return;
         }
 
         $this->searchQuery = $formSearchQuery;

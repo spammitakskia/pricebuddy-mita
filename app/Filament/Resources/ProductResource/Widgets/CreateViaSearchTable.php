@@ -6,17 +6,22 @@ use App\Filament\Resources\ProductResource\Actions\AddSearchResultUrlBulkAction;
 use App\Models\Product;
 use App\Models\UrlResearch;
 use App\Providers\Filament\AdminPanelProvider;
+use App\Services\Helpers\CurrencyHelper;
 use App\Services\Helpers\IntegrationHelper;
 use Filament\Forms\Components\TextInput;
+use Filament\Support\Enums\FontWeight;
+use Filament\Tables;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 class CreateViaSearchTable extends BaseWidget
 {
-    public const DEFAULT_PAGINATION = 100;
+    public const int DEFAULT_PAGINATION = 100;
 
     protected $listeners = [
         'updateCreateViaSearchTable' => 'reRenderTable',
@@ -40,7 +45,7 @@ class CreateViaSearchTable extends BaseWidget
         $prefix = data_get($settings, 'search_prefix');
 
         return $table
-            ->heading('Search results for "'.($prefix ? $prefix.' ' : '').$this->searchQuery.'"')
+            ->heading('Search results for "'.e(($prefix ? $prefix.' ' : '').$this->searchQuery).'"')
             ->description('Select the results you want to add to '.($this->product ? '"'.$this->product->title.'"' : 'a new product'))
             ->query(
                 UrlResearch::query()->searchQuery($this->searchQuery)
@@ -48,7 +53,7 @@ class CreateViaSearchTable extends BaseWidget
                     ->orderByDesc('store_id')
                     ->orderByDesc('id')
             )
-            ->columns(ProductSearch::tableColumns())
+            ->columns(self::tableColumns())
             ->recordClasses(fn (UrlResearch $record) => empty($record->price) ? 'opacity-50' : '')
             ->filters([
                 Filter::make('min')
@@ -90,6 +95,54 @@ class CreateViaSearchTable extends BaseWidget
     {
         $this->searchQuery = null;
 
+        $this->resetTable();
+    }
+
+    public static function tableColumns(): array
+    {
+        return [
+            Tables\Columns\Layout\Split::make([
+
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\TextColumn::make('title')
+                        ->label('Title')
+                        ->weight(FontWeight::Bold)
+                        ->url(fn (UrlResearch $record) => $record->url),
+                    Tables\Columns\TextColumn::make('url')
+                        ->label('Url')
+                        ->color('gray')
+                        ->formatStateUsing(fn (string $state): HtmlString => new HtmlString('<a href="'.$state.'" title="'.$state.'" target="_blank">'.Str::limit($state, 80).'</a>')
+                        ),
+                ])->extraAttributes(['class' => 'w-xl']),
+
+                Tables\Columns\Layout\Stack::make([
+
+                    Tables\Columns\TextColumn::make('price')
+                        ->label('Price')
+                        ->weight(FontWeight::Bold)
+                        ->formatStateUsing(fn (?float $state, UrlResearch $record): HtmlString => new HtmlString(
+                            empty($state) ? 'No price' : CurrencyHelper::toString($state, locale: $record->store?->locale, iso: $record->store?->currency)
+                        ))
+                        ->extraAttributes(['class' => 'md:text-right md:justify-end']),
+
+                    Tables\Columns\TextColumn::make('store.name')
+                        ->label('Store')
+                        ->color('gray')
+                        ->formatStateUsing(fn (string $state): HtmlString => new HtmlString(
+                            $state ?: 'Add store'
+                        ))
+                        ->extraAttributes(['class' => 'md:text-right md:justify-end']),
+
+                ])->extraAttributes(['class' => 'md:w-sm md:align-right md:pr-8'])->grow(false),
+
+            ])->from('sm'),
+
+        ];
+    }
+
+    public function refreshTable(): void
+    {
+        $this->getTableRecords()->fresh();
         $this->resetTable();
     }
 }

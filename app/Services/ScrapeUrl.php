@@ -44,9 +44,9 @@ class ScrapeUrl
         'image',
     ];
 
-    public static bool $sendUiNotifications = true;
+    public bool $sendUiNotifications = true;
 
-    public static bool $logErrors = true;
+    public bool $logErrors = true;
 
     public function __construct(protected string $url)
     {
@@ -63,6 +63,20 @@ class ScrapeUrl
     public function setMaxAttempts(int $maxAttempts): self
     {
         $this->maxAttempts = $maxAttempts;
+
+        return $this;
+    }
+
+    public function setLogErrors(bool $logErrors): self
+    {
+        $this->logErrors = $logErrors;
+
+        return $this;
+    }
+
+    public function setSendUiNotifications(bool $sendUiNotifications): self
+    {
+        $this->sendUiNotifications = $sendUiNotifications;
 
         return $this;
     }
@@ -242,7 +256,7 @@ class ScrapeUrl
 
     protected function errorNotification(string $message): void
     {
-        if (! self::$sendUiNotifications) {
+        if (! $this->sendUiNotifications) {
             return;
         }
 
@@ -255,7 +269,7 @@ class ScrapeUrl
 
     protected function errorLog(string $message, array $data = []): void
     {
-        if (! self::$logErrors) {
+        if (! $this->logErrors) {
             return;
         }
 

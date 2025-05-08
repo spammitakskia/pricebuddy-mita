@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\SearchService;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 
@@ -34,9 +35,15 @@ class BuildSearchResearch extends Command implements PromptsForMissingInput
         $service = SearchService::new($productName)
             ->setUseLaravelLog(true);
 
-        $service->build($productName);
+        try {
+            $service->build($productName);
 
-        $this->getOutput()->success('Done building search cache');
+            $this->getOutput()->success('Done building search cache');
+        } catch (Exception $e) {
+            $this->getOutput()->error('Failed to build search cache: '.$e->getMessage());
+
+            return self::FAILURE;
+        }
 
         return self::SUCCESS;
     }
