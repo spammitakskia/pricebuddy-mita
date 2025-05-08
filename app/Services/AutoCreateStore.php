@@ -15,9 +15,9 @@ use Symfony\Component\DomCrawler\Crawler;
 
 class AutoCreateStore
 {
-    public const DEFAULT_SCRAPER = ScraperService::Http->value;
+    public const string DEFAULT_SCRAPER = ScraperService::Http->value;
 
-    public const ALT_SCRAPER = ScraperService::Api->value;
+    public const string ALT_SCRAPER = ScraperService::Api->value;
 
     protected array $strategies = [];
 
@@ -26,12 +26,6 @@ class AutoCreateStore
     public function __construct(protected string $url, public ?string $html = null, string $scraper = self::DEFAULT_SCRAPER, int $timeout = 30)
     {
         $this->strategies = config('price_buddy.auto_create_store_strategies', []);
-
-        logger()->info('Auto create store', [
-            'url' => $this->url,
-            'scraper' => $scraper,
-            'timeout' => $timeout,
-        ]);
 
         if (empty($html)) {
             $this->html = WebScraper::make($scraper)

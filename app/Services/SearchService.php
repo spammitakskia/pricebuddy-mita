@@ -11,7 +11,6 @@ use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 
 class SearchService
 {
@@ -137,7 +136,15 @@ class SearchService
         return $this;
     }
 
-    protected function filterResults(): self
+    public function flushRawResultsCache(int $page = 1): self
+    {
+        $key = $this->getCacheKey('results', $this->searchQuery).':page-'.$page;
+        Cache::forget($key);
+
+        return $this;
+    }
+
+    public function filterResults(): self
     {
         $this->log('Filtering incompatible results');
 
@@ -150,7 +157,7 @@ class SearchService
         return $this;
     }
 
-    protected function normalizeStructure(): self
+    public function normalizeStructure(): self
     {
         $this->results = $this->results->map(function ($result, $idx) {
             return [
@@ -246,7 +253,7 @@ class SearchService
 
     protected function getCacheKey(string $type, string $key): string
     {
-        return self::CACHE_KEY.$type.':'.Str::slug($key);
+        return self::CACHE_KEY.$type.':'.md5($key);
     }
 
     protected function getInProgressKey(): string
