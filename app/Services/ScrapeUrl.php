@@ -29,6 +29,10 @@ class ScrapeUrl
 
     protected LoggerInterface $logger;
 
+    protected int $scraperRequestTimeout = 30;
+
+    protected int $scraperConnectTimeout = 30;
+
     protected string $scraperService = 'api';
 
     protected int $maxAttempts;
@@ -39,6 +43,10 @@ class ScrapeUrl
         'price',
         'image',
     ];
+
+    public bool $sendUiNotifications = true;
+
+    public bool $logErrors = true;
 
     public function __construct(protected string $url)
     {
@@ -52,10 +60,33 @@ class ScrapeUrl
         return resolve(static::class, ['url' => $url]);
     }
 
+    public function setMaxAttempts(int $maxAttempts): self
+    {
+        $this->maxAttempts = $maxAttempts;
+
+        return $this;
+    }
+
+    public function setLogErrors(bool $logErrors): self
+    {
+        $this->logErrors = $logErrors;
+
+        return $this;
+    }
+
+    public function setSendUiNotifications(bool $sendUiNotifications): self
+    {
+        $this->sendUiNotifications = $sendUiNotifications;
+
+        return $this;
+    }
+
     public function setScraper(string $scraper): self
     {
         $this->scraperService = $scraper;
-        $scraper = WebScraper::make($this->scraperService);
+        $scraper = WebScraper::make($this->scraperService)
+            ->setConnectTimeout($this->getConnectTimeout())
+            ->setRequestTimeout($this->getRequestTimeout());
 
         if ($this->scraperService === ScraperService::Api->value) {
             /** @var WebScraperApi $scraper */
@@ -96,7 +127,7 @@ class ScrapeUrl
 
         foreach (['price', 'title'] as $required) {
             if (empty($output[$required])) {
-                $this->logger->error('Error scraping URL '.$attempt.' times', [
+                $this->errorLog('Error scraping URL '.$attempt.' times', [
                     'attempts' => $attempt,
                     'error' => __('Missing :field when scraping', ['field' => $required]),
                     'scrape_errors' => $output['errors'] ?? [],
@@ -117,7 +148,7 @@ class ScrapeUrl
         $useCache = data_get($options, 'use_cache', true);
 
         if (! $store) {
-            $this->logger->error('No store found for URL');
+            $this->errorLog('No store found for URL');
             $this->errorNotification('No store found for URL');
 
             return false;
@@ -138,7 +169,7 @@ class ScrapeUrl
             $page = $scraper->get();
 
             if ($errors = $scraper->getErrors()) {
-                $this->logger->error('Error scraping URL', [
+                $this->errorLog('Error scraping URL', [
                     'store_id' => $store->getKey(),
                     'errors' => $errors,
                 ]);
@@ -160,7 +191,7 @@ class ScrapeUrl
             $output['body'] = $page->getBody();
             $output['errors'] = $scraper->getErrors();
         } catch (Exception $e) {
-            $this->logger->error('Error scraping URL', [
+            $this->errorLog('Error scraping URL', [
                 'error' => $e->getMessage(),
             ]);
         }
@@ -199,7 +230,7 @@ class ScrapeUrl
                 data_get($options, 'append', ''),
             ]);
         } catch (DomSelectorException $e) {
-            $this->logger->error('Error scraping URL', [
+            $this->errorLog('Error scraping URL', [
                 'url' => $this->url,
                 'error' => $e->getMessage(),
             ]);
@@ -225,10 +256,47 @@ class ScrapeUrl
 
     protected function errorNotification(string $message): void
     {
+        if (! $this->sendUiNotifications) {
+            return;
+        }
+
         Notification::make()
             ->title('Scrape error')
             ->body($message)
             ->danger()
             ->send();
+    }
+
+    protected function errorLog(string $message, array $data = []): void
+    {
+        if (! $this->logErrors) {
+            return;
+        }
+
+        $this->logger->error($message, $data);
+    }
+
+    public function getRequestTimeout(): int
+    {
+        return $this->scraperRequestTimeout;
+    }
+
+    public function setRequestTimeout(int $scraperRequestTimeout): self
+    {
+        $this->scraperRequestTimeout = $scraperRequestTimeout;
+
+        return $this;
+    }
+
+    public function getConnectTimeout(): int
+    {
+        return $this->scraperConnectTimeout;
+    }
+
+    public function setConnectTimeout(int $scraperConnectTimeout): self
+    {
+        $this->scraperConnectTimeout = $scraperConnectTimeout;
+
+        return $this;
     }
 }

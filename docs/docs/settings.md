@@ -60,9 +60,14 @@ additional settings.
 
 This is where you can configure integrations with other services.
 
-**SearXNG** - [SearXNG](https://github.com/searxng/searxng) is a self-hostable search engine
-that can be used to search for products and add them to PriceBuddy. To use this feature, you
-must have a SearXNG instance and PriceBuddy must be able to access it. Additionally
-SearXNG must be configured to allow returning results as JSON (See the 
-[SearXNG documentation](https://docs.searxng.org/admin/settings/settings_search.html#settings-search)).
+### SearchXNG
+[SearXNG](https://github.com/searxng/searxng) is a self-hostable search engine that can be used to research products 
+and add them to PriceBuddy. To use this feature, you must have a SearXNG instance and 
+PriceBuddy must be able to access it. Additionally SearXNG must be configured to allow
+returning results as JSON (See the [SearXNG documentation](https://docs.searxng.org/admin/settings/settings_search.html#settings-search)).
+
+* You can a search prefix which will get added to each search query. Eg "Buy australia"
+  is what I use.
+* By default SearchXNG returns 30 items per page but here you can set how many pages
+  to process if you want more results. Default is 1.
 

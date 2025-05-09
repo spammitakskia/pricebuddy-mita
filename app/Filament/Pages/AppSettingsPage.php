@@ -8,8 +8,10 @@ use App\Enums\NotificationMethods;
 use App\Filament\Actions\Notifications\TestAppriseAction;
 use App\Filament\Actions\Notifications\TestGotifyAction;
 use App\Filament\Traits\FormHelperTrait;
+use App\Models\UrlResearch;
 use App\Services\Helpers\CurrencyHelper;
 use App\Services\Helpers\LocaleHelper;
+use App\Services\SearchService;
 use App\Settings\AppSettings;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
@@ -233,7 +235,37 @@ class AppSettingsPage extends SettingsPage
                     ->label('Search prefix')
                     ->placeholder('Buy')
                     ->hintIcon(Icons::Help->value, __('Text to prepend to the product name when searching'))
-                    ->required(),
+                    ->nullable(),
+                Select::make('prune_days')
+                    ->label('Cache duration')
+                    ->required()
+                    ->hintIcon(Icons::Help->value, __('How long to keep the parsed search results in the cache'))
+                    ->options([
+                        1 => '1 day',
+                        7 => '7 days',
+                        14 => '14 days',
+                        30 => '30 days',
+                        90 => '90 days',
+                        180 => '180 days',
+                        365 => '365 days',
+                    ])
+                    ->default(UrlResearch::DEFAULT_PRUNE_DAYS),
+                Select::make('max_pages')
+                    ->label('How many pages of results to fetch')
+                    ->required()
+                    ->hintIcon(Icons::Help->value, __('The more pages you fetch, the longer it will take to search'))
+                    ->options(options: [
+                        1 => '1 page',
+                        2 => '2 pages',
+                        3 => '3 pages',
+                        4 => '4 pages',
+                        5 => '5 pages',
+                        10 => '10 pages',
+                        20 => '20 pages',
+                        50 => '50 pages',
+                        100 => '100 pages',
+                    ])
+                    ->default(SearchService::DEFAULT_MAX_PAGES),
             ],
             new HtmlString('Automatically search for additional products urls via <a href="https://searxng.org/" target="_blank">SearXng</a>')
         );

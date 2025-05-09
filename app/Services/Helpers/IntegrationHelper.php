@@ -8,7 +8,12 @@ class IntegrationHelper
 {
     public static function getSettings(): array
     {
-        return SettingsHelper::getSetting('integrated_services', []);
+        return once(fn () => SettingsHelper::getSetting('integrated_services', []));
+    }
+
+    public static function setSettings(array $settings): void
+    {
+        SettingsHelper::setSetting('integrated_services', $settings);
     }
 
     public static function getSearchSettings(): array

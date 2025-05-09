@@ -2,10 +2,11 @@
     /** @var App\Models\Product $record */
     use App\Services\Helpers\IntegrationHelper;
     $searchEnabled = IntegrationHelper::isSearchEnabled();
+    $activeTab = ($searchEnabled && request()->get('searchQuery')) ? 'search' : 'overview';
 @endphp
 <x-filament-panels::page class="fi-dashboard-page product-view" xmlns:x-filament="http://www.w3.org/1999/html">
 
-    <div x-data="{ tab: 'overview' }">
+    <div x-data="{ tab: '{{ $activeTab }}' }">
         {{-- Tabs--}}
         <x-filament::tabs label="Content tabs" class="justify-stretch sm:justify-start">
             <x-filament::tabs.item @click="tab = 'overview'" :alpine-active="'tab === \'overview\''"
@@ -90,8 +91,7 @@
 
             @if ($searchEnabled)
                 <div x-show="tab === 'search'">
-                    @livewire(\App\Filament\Resources\ProductResource\Widgets\ProductSearch::class, ['record' =>
-                    $record, 'lazy' => true])
+                    @livewire(\App\Filament\Resources\ProductResource\Widgets\CreateViaSearchForm::class, ['product' => $record, 'lazy' => true])
                 </div>
             @endif
 

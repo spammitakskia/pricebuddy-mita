@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\FetchAll;
+use App\Models\UrlResearch;
 use App\Services\Helpers\SettingsHelper;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
@@ -20,6 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
             ->dailyAt(SettingsHelper::getSetting('scrape_schedule_time', '06:00'));
         // Prune old log messages
         $schedule->command('model:prune', ['--model' => [LogMessage::class]])->daily();
+        // Prune search research results.
+        $schedule->command('model:prune', ['--model' => [UrlResearch::class]])->daily();
     })
     ->withMiddleware(function (Middleware $middleware) {
         //
