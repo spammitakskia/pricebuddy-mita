@@ -20,7 +20,8 @@ services:
             SCRAPER_BASE_URL: http://scraper:3000   # Url to Name of the scrapper service
             AFFILIATE_ENABLED: 'true'               # See https://pricebuddy.jez.me/support-project.html
         depends_on:
-            - database
+            database:
+                condition: service_healthy
         networks:
             - default
 
@@ -35,6 +36,12 @@ services:
             - database:/var/lib/mysql
         networks:
             - default
+        healthcheck:
+            test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 1m
 
     scraper:
         image: amerkurev/scrapper:latest
