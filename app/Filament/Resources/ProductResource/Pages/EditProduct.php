@@ -14,6 +14,8 @@ class EditProduct extends EditRecord
 {
     protected static string $resource = ProductResource::class;
 
+    protected ?float $initialPriceToPrepend = null;
+
     protected function getHeaderActions(): array
     {
         return [
