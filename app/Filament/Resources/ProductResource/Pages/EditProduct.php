@@ -68,7 +68,7 @@ class EditProduct extends EditRecord
         if ($initialPrice !== null) {
             $product = $this->record;
 
-            if (!($product instanceof \App\Models\Product)) {
+            if (! ($product instanceof \App\Models\Product)) {
                 return;
             }
 
