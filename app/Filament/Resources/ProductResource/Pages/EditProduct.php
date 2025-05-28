@@ -65,17 +65,19 @@ class EditProduct extends EditRecord
     protected function afterSave(): void
     {
         $initialPrice = $this->initialPriceToPrepend ?? null;
-        if ($initialPrice !== null && is_numeric($initialPrice)) {
+        if ($initialPrice !== null) {
             $product = $this->record;
+
+            if (!($product instanceof \App\Models\Product)) {
+                return;
+            }
+
             $priceCache = $product->getPriceCache();
             if ($priceCache->isNotEmpty()) {
-                // Get the first PriceCacheDto object
                 $firstCache = $priceCache->first();
                 $history = $firstCache->getHistory();
                 $newHistory = $product->prependValueToHistory(collect($history), floatval($initialPrice));
-                // Update the history on the DTO
                 $firstCache->setHistory($newHistory->toArray());
-                // Save the updated cache back to the product
                 $product->price_cache = $priceCache->map(fn ($dto) => $dto->toArray())->values()->all();
                 $product->save();
             }

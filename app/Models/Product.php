@@ -62,10 +62,7 @@ class Product extends Model
         'price_cache' => 'array',
         'created_at' => 'datetime',
         'favourite' => 'boolean',
-    ];
-
-    protected $appends = [
-        'initial_price',
+        'initial_price' => 'float',
     ];
 
     public static function booted()
