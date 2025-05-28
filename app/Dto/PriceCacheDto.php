@@ -183,4 +183,10 @@ class PriceCacheDto
             'currency' => $this->currency,
         ];
     }
+
+    // Setters
+    public function setHistory(array $history): void
+    {
+        $this->history = $history;
+    }
 }

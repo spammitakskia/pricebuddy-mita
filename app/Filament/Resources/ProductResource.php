@@ -141,6 +141,14 @@ class ProductResource extends Resource
                     ->label('Favourite')
                     ->hintIcon(Icons::Help->value, 'Mark this product as favourite')
                     ->default(true),
+
+                Forms\Components\TextInput::make('initial_price')
+                    ->label('Initial Price')
+                    ->numeric()
+                    ->nullable()
+                    ->default(fn ($record) => $record?->initial_price)
+                    ->suffix(\App\Services\Helpers\CurrencyHelper::getSymbol())
+                    ->hint('Set a new initial price for this product'),
             ])
                 ->columns(2)
                 ->description('Product info'),
@@ -170,8 +178,8 @@ class ProductResource extends Resource
                 Tables\Columns\Layout\Split::make([
                     Tables\Columns\Layout\Split::make([
                         Tables\Columns\ImageColumn::make('primary_image')
-                            ->width(60)
-                            ->height(60)
+                            ->width(72) // was 60
+                            ->height(72) // was 60
                             ->extraImgAttributes(['class' => 'rounded-md p-1 bg-white mr-2'])
                             ->label('Image')
                             ->url(fn ($record): string => $record->action_urls['view'])
@@ -180,19 +188,54 @@ class ProductResource extends Resource
                         Tables\Columns\Layout\Stack::make([
                             TextColumn::make('title')
                                 ->searchable()
+                                ->sortable() // Name sortable
                                 ->formatStateUsing(fn ($state): HtmlString => new HtmlString('<span title="'.$state.'">'.Str::limit($state, 50).'</span>'))
-                                ->sortable()
                                 ->weight(FontWeight::Bold)
                                 ->extraAttributes(['class' => 'pr-4 min-w-40'])
                                 ->url(fn (Product $record): string => $record->action_urls['view']),
 
                             TextColumn::make('current_price')
                                 ->label('Current Price')
+                                ->sortable() // Current price sortable
                                 ->formatStateUsing(fn ($state, Product $record) => \App\Services\Helpers\CurrencyHelper::toString($record->current_price))
                                 ->weight(FontWeight::Bold)
-                                ->color(Color::Emerald)
-                                ->extraAttributes(['class' => 'text-lg'])
-                                ->sortable(),
+                                ->color(fn ($state, Product $record) =>
+                                    $record->current_discount > 0
+                                        ? Color::Emerald
+                                        : ($record->current_discount < 0
+                                            ? Color::Rose
+                                            : Color::Gray
+                                        )
+                                )
+                                ->extraAttributes(['class' => 'text-lg']),
+
+                            TextColumn::make('current_discount')
+                                ->label('Discount')
+                                // ->sortable()
+                                ->formatStateUsing(function ($state, $record) {
+                                    if (!$record) {
+                                        return '0%';
+                                    }
+                                    $discount = ($record->current_discount * -1) . '%';
+                                    $initialPrice = $record->initial_price ?? null;
+                                    if ($initialPrice) {
+                                        $initialPriceStr = \App\Services\Helpers\CurrencyHelper::toString($initialPrice);
+                                        return "{$discount} (was {$initialPriceStr})";
+                                    }
+                                    return $discount;
+                                })
+                                ->color(fn ($state, $record) =>
+                                    $record && $record->current_discount > 0
+                                        ? Color::Emerald
+                                        : ($record && $record->current_discount < 0
+                                            ? Color::Rose
+                                            : Color::Gray
+                                        )
+                                )
+                                ->extraAttributes(['class' => 'text-xs ml-2']),
+
+
+
 
                             Tables\Columns\ViewColumn::make('badges')
                                 ->view('components.product-badges')
@@ -205,6 +248,13 @@ class ProductResource extends Resource
                                 ->url(null)
                                 ->grow(false)
                                 ->extraAttributes(['class' => 'mt-2 text-xs']),
+
+                            TextColumn::make('created_at')
+                                ->label('Added')
+                                ->dateTime('Y-m-d H:i')
+                                ->sortable() // Time added sortable
+                                ->extraAttributes(['class' => 'text-xs text-gray-500'])
+                                ->visible(fn ($record) => true), // Always visible, or adjust as needed
                         ]),
                     ])->extraAttributes(['class' => 'max-w-md mb-2']),
 

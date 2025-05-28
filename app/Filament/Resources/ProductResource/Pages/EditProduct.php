@@ -50,4 +50,32 @@ class EditProduct extends EditRecord
 
         $product->tags()->sync($this->data['tags']);
     }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Remove initial_price from direct save, we'll handle it manually
+        $this->initialPriceToPrepend = $data['initial_price'] ?? null;
+        unset($data['initial_price']);
+        return $data;
+    }
+
+    protected function afterSave(): void
+    {
+        $initialPrice = $this->initialPriceToPrepend ?? null;
+        if ($initialPrice !== null && is_numeric($initialPrice)) {
+            $product = $this->record;
+            $priceCache = $product->getPriceCache();
+            if ($priceCache->isNotEmpty()) {
+                // Get the first PriceCacheDto object
+                $firstCache = $priceCache->first();
+                $history = $firstCache->getHistory();
+                $newHistory = $product->prependValueToHistory(collect($history), floatval($initialPrice));
+                // Update the history on the DTO
+                $firstCache->setHistory($newHistory->toArray());
+                // Save the updated cache back to the product
+                $product->price_cache = $priceCache->map(fn($dto) => $dto->toArray())->values()->all();
+                $product->save();
+            }
+        }
+    }
 }

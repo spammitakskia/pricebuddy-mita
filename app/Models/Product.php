@@ -43,6 +43,7 @@ use Illuminate\Support\Str;
  * @property float $current_price
  * @property bool $is_last_scrape_successful
  * @property bool $is_notified_price
+ * @property float $current_discount
  * @property Carbon $created_at
  */
 class Product extends Model
@@ -60,6 +61,10 @@ class Product extends Model
         'price_cache' => 'array',
         'created_at' => 'datetime',
         'favourite' => 'boolean',
+    ];
+
+    protected $appends = [
+        'initial_price',
     ];
 
     public static function booted()
@@ -524,5 +529,86 @@ class Product extends Model
     public function title(int $length = 1000): string
     {
         return Str::limit($this->title, $length);
+    }
+
+    /**
+     * Current discount percentage based on price_cache history.
+     */
+    public function currentDiscount(): Attribute
+    {
+        return Attribute::make(
+            get: function (): float {
+                $priceCache = $this->getPriceCache();
+                if ($priceCache->isEmpty()) {
+                    return 0.0;
+                }
+
+                /** @var \App\Dto\PriceCacheDto $lowestPriceCache */
+                $lowestPriceCache = $priceCache->first();
+                $history = $lowestPriceCache->getHistory();
+
+                if ($history->isEmpty()) {
+                    return 0.0;
+                }
+
+                $firstPrice = $history->first();
+                $currentPrice = $this->current_price;
+
+                if ($firstPrice > 0) {
+                    return round((($firstPrice - $currentPrice) / $firstPrice) * 100, 2);
+                }
+
+                return 0.0;
+            }
+        );
+    }
+
+    /**
+     * Initial price based on price_cache history.
+     */
+    public function initialPrice(): Attribute
+    {
+        return Attribute::make(
+            get: function (): float {
+                $priceCache = $this->getPriceCache();
+                if ($priceCache->isEmpty()) {
+                    return 0.0;
+                }
+
+                /** @var \App\Dto\PriceCacheDto $lowestPriceCache */
+                $lowestPriceCache = $priceCache->first();
+                $history = $lowestPriceCache->getHistory();
+
+                if ($history->isEmpty()) {
+                    return 0.0;
+                }
+
+                return (float) $history->first();
+            }
+        );
+    }
+
+    /**
+     * Prepend a value to the history with price and date equal to the second value minus 1 hour.
+     * If only one entry, prepends with date minus 1 hour from the first entry.
+     *
+     * @param Collection $history
+     * @param float $value
+     * @return Collection
+     */
+    public function prependValueToHistory(Collection $history, float $value): Collection
+    {
+        if ($history->count() >= 2) {
+            $dates = $history->keys()->values();
+            $secondDate = Carbon::parse($dates[1]);
+            $newDate = $secondDate->copy()->subDay()->toDateString(); // Use toDateString() and subDay()
+            // Use union to ensure the new value is at the beginning
+            return collect([$newDate => $value])->union($history);
+        }
+
+        // Only one entry, use its date minus 1 day
+        $firstDate = Carbon::parse($history->keys()->first());
+        $newDate = $firstDate->copy()->subDay()->toDateString(); // Use toDateString() and subDay()
+        return collect([$newDate => $value])->union($history);
     }
 }
