@@ -26,7 +26,26 @@ class CreateProduct extends CreateRecord
             createStore: data_get($data, 'create_store', false)
         );
 
-        return $urlModel->product;
+        $product = $urlModel->product;
+
+        // Save notify_price and notify_percent if present
+        if (isset($data['notify_price'])) {
+            $product->notify_price = $data['notify_price'];
+        }
+        if (isset($data['notify_percent'])) {
+            $product->notify_percent = $data['notify_percent'];
+        }
+        $product->save();
+
+        return $product;
+    }
+
+    protected function afterCreate(): void
+    {
+        session([
+            'notify_price' => $this->form->getState()['notify_price'] ?? null,
+            'notify_percent' => $this->form->getState()['notify_percent'] ?? null,
+        ]);
     }
 
     public function getFooterWidgetsColumns(): int|array

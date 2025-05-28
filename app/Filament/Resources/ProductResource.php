@@ -74,6 +74,26 @@ class ProductResource extends Resource
             ->hintIcon(Icons::Help->value, 'Attempt to create automatically create a store. Does not always work')
             ->default(true);
 
+        // --- Add notify fields and persist their state ---
+        $components[] = Forms\Components\Grid::make(2)
+            ->schema([
+                Forms\Components\TextInput::make('notify_price')
+                    ->label('Notify price')
+                    ->suffix(CurrencyHelper::getSymbol())
+                    ->numeric()
+                    ->nullable()
+                    ->default(fn () => session('notify_price'))
+                    ->hintIcon(Icons::Help->value, 'Get notified when price is equal or less than this value'),
+
+                Forms\Components\TextInput::make('notify_percent')
+                    ->label('Notify percent')
+                    ->suffix('%')
+                    ->numeric()
+                    ->nullable()
+                    ->default(fn () => session('notify_percent'))
+                    ->hintIcon(Icons::Help->value, 'Get notified when price drops below specified percentage'),
+            ]);
+
         return [
             Forms\Components\Section::make(__('Url of the product'))->schema($components)
                 ->description(__('Given the url we will scrape the product information. Products and their urls are unique to your user account')),
@@ -165,6 +185,14 @@ class ProductResource extends Resource
                                 ->weight(FontWeight::Bold)
                                 ->extraAttributes(['class' => 'pr-4 min-w-40'])
                                 ->url(fn (Product $record): string => $record->action_urls['view']),
+
+                            TextColumn::make('current_price')
+                                ->label('Current Price')
+                                ->formatStateUsing(fn ($state, Product $record) => \App\Services\Helpers\CurrencyHelper::toString($record->current_price))
+                                ->weight(FontWeight::Bold)
+                                ->color(Color::Emerald)
+                                ->extraAttributes(['class' => 'text-lg'])
+                                ->sortable(),
 
                             Tables\Columns\ViewColumn::make('badges')
                                 ->view('components.product-badges')
