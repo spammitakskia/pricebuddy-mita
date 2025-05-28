@@ -81,3 +81,5 @@ jobs:
           tags: ${{ vars.DOCKER_USERNAME }}/${{ github.event.repository.name }}:latest
           build-args: |
             APP_VERSION=${{ github.ref_name }}
+
+# test ci
