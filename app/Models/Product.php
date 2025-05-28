@@ -591,10 +591,6 @@ class Product extends Model
     /**
      * Prepend a value to the history with price and date equal to the second value minus 1 hour.
      * If only one entry, prepends with date minus 1 hour from the first entry.
-     *
-     * @param Collection $history
-     * @param float $value
-     * @return Collection
      */
     public function prependValueToHistory(Collection $history, float $value): Collection
     {
@@ -603,12 +599,14 @@ class Product extends Model
             $secondDate = Carbon::parse($dates[1]);
             $newDate = $secondDate->copy()->subDay()->toDateString(); // Use toDateString() and subDay()
             // Use union to ensure the new value is at the beginning
+
             return collect([$newDate => $value])->union($history);
         }
 
         // Only one entry, use its date minus 1 day
         $firstDate = Carbon::parse($history->keys()->first());
         $newDate = $firstDate->copy()->subDay()->toDateString(); // Use toDateString() and subDay()
+
         return collect([$newDate => $value])->union($history);
     }
 }

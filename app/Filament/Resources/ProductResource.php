@@ -199,8 +199,7 @@ class ProductResource extends Resource
                                 ->sortable() // Current price sortable
                                 ->formatStateUsing(fn ($state, Product $record) => \App\Services\Helpers\CurrencyHelper::toString($record->current_price))
                                 ->weight(FontWeight::Bold)
-                                ->color(fn ($state, Product $record) =>
-                                    $record->current_discount > 0
+                                ->color(fn ($state, Product $record) => $record->current_discount > 0
                                         ? Color::Emerald
                                         : ($record->current_discount < 0
                                             ? Color::Rose
@@ -213,19 +212,20 @@ class ProductResource extends Resource
                                 ->label('Discount')
                                 // ->sortable()
                                 ->formatStateUsing(function ($state, $record) {
-                                    if (!$record) {
+                                    if (! $record) {
                                         return '0%';
                                     }
-                                    $discount = ($record->current_discount * -1) . '%';
+                                    $discount = ($record->current_discount * -1).'%';
                                     $initialPrice = $record->initial_price ?? null;
                                     if ($initialPrice) {
                                         $initialPriceStr = \App\Services\Helpers\CurrencyHelper::toString($initialPrice);
+
                                         return "{$discount} (was {$initialPriceStr})";
                                     }
+
                                     return $discount;
                                 })
-                                ->color(fn ($state, $record) =>
-                                    $record && $record->current_discount > 0
+                                ->color(fn ($state, $record) => $record && $record->current_discount > 0
                                         ? Color::Emerald
                                         : ($record && $record->current_discount < 0
                                             ? Color::Rose
@@ -233,9 +233,6 @@ class ProductResource extends Resource
                                         )
                                 )
                                 ->extraAttributes(['class' => 'text-xs ml-2']),
-
-
-
 
                             Tables\Columns\ViewColumn::make('badges')
                                 ->view('components.product-badges')

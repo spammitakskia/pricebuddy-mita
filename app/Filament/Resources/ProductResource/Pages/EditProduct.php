@@ -56,6 +56,7 @@ class EditProduct extends EditRecord
         // Remove initial_price from direct save, we'll handle it manually
         $this->initialPriceToPrepend = $data['initial_price'] ?? null;
         unset($data['initial_price']);
+
         return $data;
     }
 
@@ -73,7 +74,7 @@ class EditProduct extends EditRecord
                 // Update the history on the DTO
                 $firstCache->setHistory($newHistory->toArray());
                 // Save the updated cache back to the product
-                $product->price_cache = $priceCache->map(fn($dto) => $dto->toArray())->values()->all();
+                $product->price_cache = $priceCache->map(fn ($dto) => $dto->toArray())->values()->all();
                 $product->save();
             }
         }
