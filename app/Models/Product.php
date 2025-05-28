@@ -44,6 +44,7 @@ use Illuminate\Support\Str;
  * @property bool $is_last_scrape_successful
  * @property bool $is_notified_price
  * @property float $current_discount
+ * @property float $initial_price
  * @property Carbon $created_at
  */
 class Product extends Model
