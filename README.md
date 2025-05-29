@@ -1,31 +1,31 @@
-##Disclamer
+## Disclamer
 - "VIBE CODING" fork. (I have zero knowledge on php) 
 - Use at your own risk.
 
-##Goal
+## Goal
 - Do not change the DB structure
 - Improve the UI for my needs.
 
-##Done:
-###Products screen
+## Done:
+### Products screen
 - Add sort by price
 - Add following in product row: price, initial price, current discount %
 
-###Edit Product
+### Edit Product
 - Added: Initial price, Notify Price, Notify Percent
 
-###Settings
+### Settings
 - Test email notification button
 
-##TODOs:
-###Products page
+## TODOs:
+### Products page
 - Bulk edit Notify Percent
 - Sort by Discount Dercent
 
-###Edit Product
+### Edit Product
 - Populate initial price
 
-###Other
+### Other
 - Merge items
 
 
