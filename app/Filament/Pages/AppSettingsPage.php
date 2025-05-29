@@ -6,6 +6,7 @@ use App\Enums\Icons;
 use App\Enums\IntegratedServices;
 use App\Enums\NotificationMethods;
 use App\Filament\Actions\Notifications\TestAppriseAction;
+use App\Filament\Actions\Notifications\TestEmailAction;
 use App\Filament\Actions\Notifications\TestGotifyAction;
 use App\Filament\Traits\FormHelperTrait;
 use App\Models\UrlResearch;
@@ -153,6 +154,16 @@ class AppSettingsPage extends SettingsPage
                         'ssl' => 'SSL',
                     ])
                     ->hintIcon(Icons::Help->value, 'The encryption method to use when sending emails'),
+                TextInput::make('nickname')
+                    ->label('From name')
+                    ->hintIcon(Icons::Help->value, 'A friendly name for this email sender')
+                    ->nullable(),
+                Forms\Components\Actions::make([
+                    TestEmailAction::make()
+                        ->label('Test Email Notification')
+                        ->setSettings(fn () => $this->form->getState()['notification_services']['mail'] ?? []),
+                ])
+                    ->extraAttributes(['style' => 'margin-top: 32px;']),
             ],
             __('SMTP settings for sending emails')
         );

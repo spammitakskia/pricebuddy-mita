@@ -1,3 +1,35 @@
+##Disclamer
+- "VIBE CODING" fork. (I have zero knowledge on php) 
+- Use at your own risk.
+
+##Goal
+- Do not change the DB structure
+- Improve the UI for my needs.
+
+##Done:
+###Products screen
+- Add sort by price
+- Add following in product row: price, initial price, current discount %
+
+###Edit Product
+- Added: Initial price, Notify Price, Notify Percent
+
+###Settings
+- Test email notification button
+
+##TODOs:
+###Products page
+- Bulk edit Notify Percent
+- Sort by Discount Dercent
+
+###Edit Product
+- Populate initial price
+
+###Other
+- Merge items
+
+
+
 # <img src="public/images/logo-full.svg" width="250" height="auto" alt="PriceBuddy">
 
 PriceBuddy is an open source, self-hostable, web application that allows users
