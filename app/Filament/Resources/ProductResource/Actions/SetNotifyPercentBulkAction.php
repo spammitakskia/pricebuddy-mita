@@ -2,8 +2,9 @@
 
 namespace App\Filament\Resources\ProductResource\Actions;
 
-use Filament\Tables\Actions\BulkAction;
+use App\Models\Product; // Add this at the top
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Collection;
 
 class SetNotifyPercentBulkAction extends BulkAction
@@ -31,6 +32,7 @@ class SetNotifyPercentBulkAction extends BulkAction
         ]);
         $this->action(function (array $data, Collection $records) {
             $notifyPercent = floatval($data['notify_percent']);
+            /** @var Product $product */
             foreach ($records as $product) {
                 $product->notify_percent = $notifyPercent;
                 $product->save();
