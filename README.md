@@ -10,6 +10,7 @@
 ### Products screen
 - Add sort by price
 - Add following in product row: price, initial price, current discount %
+- Bulk edit Notify Percent
 
 ### Edit Product
 - Added: Initial price, Notify Price, Notify Percent
@@ -19,7 +20,6 @@
 
 ## TODOs:
 ### Products page
-- Bulk edit Notify Percent
 - Sort by Discount Dercent
 
 ### Edit Product
